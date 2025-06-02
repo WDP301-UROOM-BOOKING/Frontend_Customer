@@ -1,0 +1,29 @@
+/* Toast chung */
+.toast-alert {
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 6px;
+  padding: 10px 15px;
+  display: flex;
+  align-items: center;
+}
+
+/* Màu cho thanh progress theo từng loại toast */
+.toast-progress-success {
+  background-color: #28a745; /* Màu xanh lá */
+}
+.toast-progress-danger {
+  background-color: #dc3545; /* Màu đỏ */
+}
+.toast-progress-info {
+  background-color: #17a2b8; /* Màu xanh dương */
+}
+.toast-progress-warning {
+  background-color: #ffc107; /* Màu vàng */
+}
+
+/* Bo tròn progress bar */
+.Toastify__progress-bar {
+  height: 4px !important;
+  border-radius: 10px;
+}

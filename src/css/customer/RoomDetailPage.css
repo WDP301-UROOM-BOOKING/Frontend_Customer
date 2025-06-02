@@ -1,0 +1,50 @@
+body {
+    margin: 0;
+    padding: 0;
+  }
+  
+  .app-container {
+    min-height: 100vh;
+  }
+  
+  /* Navbar Styles */
+  /* .navbar {
+    background-color: rgba(26, 43, 73, 0);
+    padding: 1rem 0;
+  } */
+  
+  
+ 
+  
+  /* Main Content */
+  .main-content_2 {
+    margin-top: -2rem;
+    margin-bottom: 3rem;
+    position: relative;
+    z-index: 2;
+  }
+  
+  .content-card_1 {
+    background: white;
+    border-radius: 1rem;
+    padding: 2rem;
+    margin-top: 5%;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+  
+  .main-image-container {
+    margin-bottom: 1.5rem;
+  }
+  .custom-navbar.navbar {
+    background-color: #1a1a3d !important;
+  }
+  
+
+  
+ 
+  
+  
+  
+  
+  
+ 

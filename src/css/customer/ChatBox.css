@@ -1,0 +1,100 @@
+.chatbox-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+  }
+  
+  .chatbox-toggle {
+    background-color: #1a1a3d;
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  }
+  
+  .chatbox {
+    width: 400px;
+    height: 600px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .chatbox-header {
+    background: #1a1a3d;
+    color: white;
+    padding: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: bold;
+  }
+  
+  .close-icon {
+    cursor: pointer;
+  }
+  
+  .chatbox-messages {
+    flex: 1;
+    padding: 10px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .message {
+    padding: 8px;
+    margin: 5px;
+    border-radius: 10px;
+    max-width: 80%;
+  }
+  
+  .user {
+    background: #1a1a3d;
+    color: white;
+    align-self: flex-end;
+  }
+  
+  .bot {
+    background: #e0e0e0;
+    align-self: flex-start;
+  }
+  
+  .chatbox-input {
+    display: flex;
+    padding: 10px;
+    border-top: 1px solid #ccc;
+  }
+  
+  .chatbox-input input {
+    flex: 1;
+    padding: 8px;
+    border: none;
+    outline: none;
+    border-radius: 5px;
+    margin-right: 5px;
+  }
+  
+  .chatbox-input button {
+    background: #1a1a3d;
+    color: white;
+    border: none;
+    padding: 8px;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  
+.hotel-link {
+  text-decoration: none;
+  color: black;
+  transition: color 0.2s ease;
+}
+
+.hotel-link:hover {
+  color: blue;
+}

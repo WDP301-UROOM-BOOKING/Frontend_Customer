@@ -1,0 +1,38 @@
+.message-container:hover .hover-left,
+.message-container:hover .hover-right {
+  opacity: 1;
+  visibility: visible;
+}
+
+
+.hover-right {
+  position: absolute;
+  bottom: -30px;
+  left: 0px;
+  background-color: #000;
+  color: #fff;
+  padding: 4px 6px;
+  font-size: 14px;
+  border-radius: 4px;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+
+.hover-left {
+  position: absolute;
+  bottom: -30px;
+  right: 0px;
+  background-color: #000;
+  color: #fff;
+  padding: 4px 8px;
+  font-size: 14px;
+  border-radius: 4px;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s ease;
+  z-index: 10;
+}

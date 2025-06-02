@@ -1,0 +1,94 @@
+.hotel-card {
+    border: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .hotel-tag {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background-color: white;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    z-index: 1;
+  }
+  
+  .hotel-image {
+    height: 100%;
+    object-fit: cover;
+  }
+  
+  .hotel-name {
+    font-size: 1.1rem;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+  }
+  
+  .star-icon {
+    color: #ffc107;
+    margin-right: 2px;
+  }
+  
+  .location {
+    color: #666;
+    font-size: 0.9rem;
+  }
+  
+  .rating-box1 {
+    background-color: #007bff;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+  }
+  
+  .view-detail {
+    color: #007bff;
+    text-decoration: none;
+    font-size: 0.9rem;
+  }
+  
+  .view-detail:hover {
+    text-decoration: underline;
+  }
+  
+  .pagination-container {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 2rem;
+  }
+  
+  .page-btn {
+    min-width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+  }
+  
+  .page-btn.active {
+    background-color: #007bff;
+    border-color: #007bff;
+  }
+  
+  /* Filter section styling */
+  .form-check-input:checked {
+    background-color: #007bff;
+    border-color: #007bff;
+  }
+  
+  .form-select {
+    border-radius: 4px;
+  }
+  
+  .form-select:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+  }
+  
+  

@@ -1,0 +1,178 @@
+.booking-bill-container {
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  
+  .back-button {
+    border-radius: 20px;
+    padding: 5px 15px;
+    font-size: 14px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .booking-bill-card {
+    border: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+  }
+  
+  /* Left side - Hotel Image and Info */
+  .hotel-info-section {
+    border-right: 1px solid #eee;
+    padding: 0;
+  }
+  
+  .hotel-image-container {
+    height: 250px;
+    overflow: hidden;
+  }
+  
+
+  .hotel-details {
+    padding: 15px;
+    border-top: 1px solid #eee;
+  }
+  
+  .hotel-name-title {
+    font-weight: bold;
+    margin-bottom: 5px;
+    text-align: center;
+  }
+  
+  .hotel-full-name {
+    text-align: center;
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 15px;
+  }
+  
+  .check-dates-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 10px;
+  }
+  
+  .check-date-box {
+    text-align: center;
+  }
+  
+  .date-label {
+    font-size: 12px;
+    margin-bottom: 5px;
+    font-weight: bold;
+  }
+  
+  .date-value {
+    font-size: 14px;
+    margin: 0;
+  }
+  
+  .star-rating-container {
+    text-align: center;
+  }
+  
+  .star-hotel-text {
+    font-size: 12px;
+    margin-bottom: 5px;
+    font-weight: bold;
+  }
+  
+  .star-rating {
+    display: flex;
+    justify-content: center;
+  }
+  
+  .star {
+    color: #ccc;
+    margin: 0 1px;
+  }
+  
+  .star.filled {
+    color: #ffc107;
+  }
+  
+  /* Right side - Booking Bill */
+  .bill-section {
+    padding: 20px;
+  }
+  
+  .bill-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #00bcd4;
+    padding-bottom: 10px;
+  }
+  
+  .uroom-title {
+    font-weight: bold;
+    font-size: 24px;
+  }
+  
+  .booking-bill-header {
+    text-align: right;
+  }
+  
+  .date-created {
+    font-size: 12px;
+    color: #666;
+    margin: 0;
+  }
+  
+  .section-title {
+    font-weight: bold;
+    font-size: 16px;
+    margin-bottom: 10px;
+  }
+  
+  .info-section {
+    margin-bottom: 20px;
+  }
+  
+  .info-label {
+    font-weight: bold;
+    font-size: 14px;
+  }
+  
+  .info-value {
+    font-size: 14px;
+  }
+  
+  .booking-table {
+    font-size: 14px;
+  }
+  
+  .booking-table th {
+    background-color: #f8f9fa;
+    text-align: center;
+  }
+  
+  .booking-table td {
+    vertical-align: middle;
+    text-align: center;
+  }
+  
+  .total-row {
+    font-weight: bold;
+    background-color: #f8f9fa;
+  }
+  
+  .terms-checkbox {
+    margin-bottom: 15px;
+  }
+  
+  .export-button-container {
+    display: flex;
+    justify-content: flex-end;
+  }
+  
+  .export-button {
+    background-color: #00bcd4;
+    border: none;
+    border-radius: 20px;
+    padding: 8px 20px;
+    font-weight: bold;
+  }

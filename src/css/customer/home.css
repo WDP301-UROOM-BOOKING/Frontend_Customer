@@ -1,0 +1,156 @@
+body {
+  margin: 0;
+  padding: 0;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #F2F6FF;
+}
+
+.app-container_1 {
+  min-height: 100vh;
+}
+
+/* Navbar Styles */
+/* .navbar {
+  background-color: rgba(26, 43, 73, 0);
+  padding: 1rem 0;
+} */
+
+
+/* Hero Section */
+.hero-section_1 {
+  background-image: linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.5)),
+    url("../../images/banner.png");
+  background-size: cover;
+  background-position: center;
+  height: 700px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding-bottom: 3rem;
+}
+
+.hero-content_1 {
+  color: white;
+ 
+}
+
+.hero-content_1 h1 {
+  font-size: 4rem;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+/* /////search/// */
+
+/* 
+.search-section_1 {
+  margin-top: 2rem;
+  padding-top: 2rem;
+  padding-left: 3rem;
+  padding-right: 3rem;
+
+} */
+
+/* Hotel Rooms Section */
+
+.section-title_1 {
+  text-align: center;
+  /* font-size: 2.5rem; */
+  font-weight: bold;
+  margin-bottom: 3rem;
+  color: #1a2b49;
+}
+/* .book_now_btn_1 {
+  padding: 0.7rem 4.5rem;
+  font-weight: 500;
+  background-color: white;
+  color: #0d6efd;
+} */
+/* //////about */
+.about-us-container_1 {
+  padding: 60px 20px;
+}
+
+.about-title_1 {
+  font-size: 2.5rem;
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.about-subtitle_1 {
+  font-size: 1.1rem;
+  color: #666;
+  margin-bottom: 30px;
+}
+
+.about-text_1 {
+  font-size: 1rem;
+  color: #333;
+  line-height: 1.6;
+  text-align: justify;
+}
+
+.about-images_1 {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.image-stack_1 {
+  position: relative;
+  width: 300px;
+  /* align-items: end; */
+}
+
+.top-image_1 {
+  width: 100%;
+  border-radius: 20px;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.bottom-image_1 {
+  width: 90%;
+  position: absolute;
+  bottom: -200px;
+  left: -200px;
+  border-radius: 20px;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+}
+.hotel-booking_1 {
+padding: 50px 0;
+}
+
+.image-container_1 {
+position: relative;
+display: inline-block;
+}
+
+.main-image_1 {
+width: 100%;
+border-radius: 20px;
+}
+
+.info-badge_1 {
+position: absolute;
+background: white;
+color: #000;
+padding: 10px 15px;
+border-radius: 10px;
+font-weight: bold;
+box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.top-right {
+top: 10%;
+right: -10%;
+}
+
+.bottom-right {
+bottom: 10%;
+right: -10%;
+}
+
+.bottom-left {
+bottom: 30%;
+left: -10%;
+}
+

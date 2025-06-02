@@ -1,0 +1,57 @@
+.booking-history-container {
+    padding: 20px;
+    background-color: #f0f8ff;
+  }
+  
+  .filter-buttons {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  
+  .filter-btn {
+    border-radius: 20px;
+    padding: 6px 15px;
+  }
+  
+  .filter-btn.active {
+    background-color: #0d6efd;
+    color: white;
+  }
+  
+  .reservation-card {
+    border-radius: 10px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    height: 100%;
+  }
+  
+  .reservation-header {
+    margin-bottom: 15px;
+  }
+  
+  .reservation-details p {
+    margin-bottom: 8px;
+  }
+  
+  .status-badge {
+    margin-left: 10px;
+    padding: 5px 10px;
+    border-radius: 20px;
+    background-color: #0dcaf0;
+  }
+  
+  
+  .pagination-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 30px;
+  }
+  
+  .pagination .page-item.active .page-link {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+  }
+  
+  .pagination .page-link {
+    color: #0d6efd;
+  }

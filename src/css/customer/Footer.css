@@ -1,0 +1,37 @@
+.footer {
+    background: #1a1a3d; /* Màu nền tối */
+    padding: 20px 0;
+    color: #fff;
+    text-align: center;
+  }
+  
+  .footer-logo {
+    font-size: 24px;
+    font-weight: bold;
+    /* color: #f8e71c; Màu vàng nổi bật */
+  }
+  
+  .footer-logo span {
+    color: #fff;
+  }
+  
+  .footer-links a,
+  .social-links a {
+    display: block;
+    color: #fff;
+    text-decoration: none;
+    margin-bottom: 8px;
+    font-size: 14px;
+    text-align: left;
+  }
+  
+  .footer-links a:hover,
+  .social-links a:hover {
+    text-decoration: underline;
+  }
+  
+  .social-links a {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
