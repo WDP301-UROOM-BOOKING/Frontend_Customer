@@ -28,20 +28,28 @@ import ReportedFeedback from "./pages/customer/home/ReportedFeedback";
 import ChatPage from "./pages/customer/home/ChatPage";
 
 import { useEffect } from "react";
-import ChatBox from "@pages/ChatMessage";
-import { useAppSelector } from "@redux/store";
+import { useAppDispatch, useAppSelector } from "@redux/store";
+import { initializeSocket } from "@redux/socket/socketSlice";
 
 function App() {
   useEffect(() => {
-    document.title = "My Uroom";
+    document.title = "Uroom Customer";
   }, []);
 
+  const dispatch = useAppDispatch();
   const Socket = useAppSelector((state) => state.Socket.socket);
   const Auth = useAppSelector((state) => state.Auth.Auth);
 
   useEffect(() => {
-    if (!Socket || !Auth?._id) return;
+    if (Auth?._id === -1) return;
+    dispatch(initializeSocket());
+  }, [Auth?._id]);
 
+  useEffect(() => {
+    if (!Socket) return;
+    if (Auth?._id === -1) return;
+
+    console.log("Socket initialized:", Socket.id);
     Socket.emit("register", Auth._id);
 
     const handleForceJoinRoom = ({ roomId, partnerId }) => {
@@ -49,9 +57,6 @@ function App() {
         userId: Auth._id,
         partnerId,
       });
-
-      // Optional: tự mở khung chat với partnerId nếu chưa mở
-      // dispatch(setSelectedUser(partnerId)); hoặc setSelectedUser(partnerId)
     };
 
     Socket.on("force-join-room", handleForceJoinRoom);
@@ -60,7 +65,7 @@ function App() {
       Socket.off("force-join-room", handleForceJoinRoom);
     };
   }, [Socket, Auth?._id]);
-  
+
   return (
     <Router>
       <Routes>
@@ -119,7 +124,6 @@ function App() {
         <Route path={Routers.BannedPage} element={<BannedPage />} />
         <Route path={Routers.ErrorPage} element={<ErrorPage />} />
         <Route path={Routers.ChatPage} element={<ChatPage />} />
-        <Route path="Message" element={<ChatBox />} />
         {/* <Route path="/test" element={<TestTailwindCss />} /> */}
       </Routes>
     </Router>

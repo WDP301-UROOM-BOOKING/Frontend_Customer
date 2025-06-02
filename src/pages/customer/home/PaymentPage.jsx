@@ -129,16 +129,7 @@ const PaymentPage = () => {
     setShowDeleteModal(true);
   };
 
-/*************  ✨ Windsurf Command ⭐  *************/
-/**
- * Format a given amount of money in USD as a string using the locale
- * "en-US", with a style of "currency", and 0 minimum and maximum fraction
- * digits. If the amount is undefined or null, return "$0".
- *
- * @param {number} amount The amount of money to format.
- * @returns {string} The formatted string.
- */
-/*******  b6007135-9bba-44d6-9803-735f1da2d51c  *******/  const formatCurrency = (amount) => {
+const formatCurrency = (amount) => {
     if (amount === undefined || amount === null) return "$0";
     return new Intl.NumberFormat("en-US", {
     style: "currency",

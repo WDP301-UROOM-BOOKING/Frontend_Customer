@@ -15,13 +15,11 @@ import image from "../../images/image-removebg-preview.png";
 import { useAppSelector } from "../../redux/store";
 import AuthActions from "../../redux/auth/actions";
 import { useDispatch } from "react-redux";
-import {
-  clearToken,
-  setStatusBooking,
-} from "@utils/handleToken";
+import { clearToken, setStatusBooking } from "@utils/handleToken";
 import SearchActions from "@redux/search/actions";
+import { disconnectSocket } from "@redux/socket/socketSlice";
 
-function NavigationBar({from}) {
+function NavigationBar({ from }) {
   const today = new Date();
   const tomorrow = new Date();
   tomorrow.setDate(today.getDate() + 1);
@@ -153,7 +151,6 @@ function NavigationBar({from}) {
             </Nav.Link>
           </Nav>
 
-
           {Auth._id !== -1 ? (
             <Dropdown align="end">
               <Dropdown.Toggle
@@ -172,7 +169,11 @@ function NavigationBar({from}) {
                   {Auth.name}
                 </a>{" "}
                 <Image
-                  src={(Auth?.image?.url != "" && Auth?.image?.url != undefined) ? Auth?.image?.url : "https://i.pinimg.com/736x/8f/1c/a2/8f1ca2029e2efceebd22fa05cca423d7.jpg"}
+                  src={
+                    Auth?.image?.url != "" && Auth?.image?.url != undefined
+                      ? Auth?.image?.url
+                      : "https://i.pinimg.com/736x/8f/1c/a2/8f1ca2029e2efceebd22fa05cca423d7.jpg"
+                  }
                   roundedCircle
                   width="30"
                   height="30"
@@ -190,6 +191,7 @@ function NavigationBar({from}) {
                 <Dropdown.Divider />
                 <Dropdown.Item
                   onClick={() => {
+                    dispatch(disconnectSocket());
                     navigate(Routers.Home, {
                       state: { message: "Logout account successfully !!!" },
                     });
@@ -228,10 +230,12 @@ function NavigationBar({from}) {
                   color: "#2E9AED",
                 }}
                 onClick={() => {
-                  if(from === 'login'){
-                    navigate(Routers.LoginPage , { state: { from: "register" } })
-                  }else{
-                    navigate(Routers.LoginPage)
+                  if (from === "login") {
+                    navigate(Routers.LoginPage, {
+                      state: { from: "register" },
+                    });
+                  } else {
+                    navigate(Routers.LoginPage);
                   }
                 }}
               >

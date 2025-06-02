@@ -94,20 +94,21 @@ function CustomerChat() {
   };
 
   useEffect(() => {
+    console.log("Socket ABC:", Socket?.id);
+    if (!Socket) return;
+    if (Auth?._id === -1) return;
+    if (!selectedUser?._id) return;
+
+    Socket.emit("join-room", {
+      userId: Auth._id,
+      partnerId: selectedUser._id,
+    });
+  }, [Socket, Auth?._id, selectedUser?._id]);
+
+  // Nhận message và markAsRead
+  useEffect(() => {
     if (!Socket || !Auth?._id) return;
 
-    // Gửi userId để đăng ký socket
-    Socket.emit("register", Auth._id);
-
-    // Nếu có selectedUser thì join vào room chung
-    if (selectedUser?._id) {
-      Socket.emit("join-room", {
-        userId: Auth._id,
-        partnerId: selectedUser._id,
-      });
-    }
-
-    // Nhận tin nhắn riêng
     const handleReceiveMessage = (msg) => {
       if (Auth._id === msg.receiverId && msg.senderId === selectedUser?._id) {
         setUserMessages((prev) => [...prev, msg]);
@@ -115,7 +116,6 @@ function CustomerChat() {
       fetchAllUser();
     };
 
-    // Nhận cập nhật tin nhắn đã đọc
     const handleMarkAsRead = (msg) => {
       if (selectedUser?._id == msg.senderId) {
         setUserMessages((prevMessages) =>
@@ -371,7 +371,7 @@ function CustomerChat() {
           <></>
         )}
         {/* Khu vực tin nhắn */}
-        <div style={styles.messages}        >
+        <div style={styles.messages}>
           {userMessages && userMessages.length > 0 ? (
             userMessages.map((message, index) => {
               const currentTime = moment(message.timestamp);
