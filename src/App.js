@@ -124,7 +124,6 @@ function App() {
         <Route path={Routers.BannedPage} element={<BannedPage />} />
         <Route path={Routers.ErrorPage} element={<ErrorPage />} />
         <Route path={Routers.ChatPage} element={<ChatPage />} />
-        {/* <Route path="/test" element={<TestTailwindCss />} /> */}
       </Routes>
     </Router>
   );

@@ -724,7 +724,7 @@ const BookingBill = () => {
                       label="Agree to the Hotel and Website Terms & Privacy"
                       className="terms-checkbox"
                     />
-                    {/* <div className="export-button-container">
+                    <div className="export-button-container">
                       <Button
                         variant="info"
                         className="export-button"
@@ -747,7 +747,7 @@ const BookingBill = () => {
                           </>
                         )}
                       </Button>
-                    </div> */}
+                    </div>
                   </div>
                 </Col>
               </Row>

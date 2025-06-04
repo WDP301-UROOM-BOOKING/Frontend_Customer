@@ -142,37 +142,37 @@ const childrenOptions = Array.from({ length: 11 }, (_, i) => ({
 }));
 
 export const SearchBar = () => {
-  const navigate = useNavigate()
-  const hotels = useAppSelector((state) => state.hotel.hotels)
-  const todayDate = new Date()
-  const tomorrowDate = new Date()
-  tomorrowDate.setDate(todayDate.getDate() + 1)
-  const today = todayDate.toISOString().split("T")[0]
-  const tomorrow = tomorrowDate.toISOString().split("T")[0]
+  const navigate = useNavigate();
+  const hotels = useAppSelector((state) => state.hotel.hotels);
+  const todayDate = new Date();
+  const tomorrowDate = new Date();
+  tomorrowDate.setDate(todayDate.getDate() + 1);
+  const today = todayDate.toISOString().split("T")[0];
+  const tomorrow = tomorrowDate.toISOString().split("T")[0];
 
-  const [checkinDate, setCheckinDate] = useState(today)
-  const [checkoutDate, setCheckoutDate] = useState(tomorrow)
-  const [searchQuery, setSearchQuery] = useState("")
-  const [showSuggestions, setShowSuggestions] = useState(false)
-  const [filteredHotels, setFilteredHotels] = useState([])
+  const [checkinDate, setCheckinDate] = useState(today);
+  const [checkoutDate, setCheckoutDate] = useState(tomorrow);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [filteredHotels, setFilteredHotels] = useState([]);
   const [selectedCity, setSelectedCity] = useState({
     value: "Hà Nội",
     label: "Hà Nội",
-  })
-  const [selectedAdults, setSelectedAdults] = useState(adultsOptions[0])
-  const [selectedChildren, setSelectedChildren] = useState(childrenOptions[0])
-  const dispatch = useDispatch()
+  });
+  const [selectedAdults, setSelectedAdults] = useState(adultsOptions[0]);
+  const [selectedChildren, setSelectedChildren] = useState(childrenOptions[0]);
+  const dispatch = useDispatch();
   const [errors, setErrors] = useState({
     address: false,
     checkinDate: false,
     checkoutDate: false,
     dateOrder: false,
-  })
+  });
 
-  const [showModal, setShowModal] = useState(false)
-  const [errorMessage, setErrorMessage] = useState("")
-  const searchRef = useRef(null)
-  const suggestionsRef = useRef(null)
+  const [showModal, setShowModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const searchRef = useRef(null);
+  const suggestionsRef = useRef(null);
 
   // Filter hotels based on search query
   useEffect(() => {
@@ -180,15 +180,15 @@ export const SearchBar = () => {
       const filtered = hotels.filter(
         (hotel) =>
           hotel?.hotelName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          hotel?.address?.toLowerCase().includes(searchQuery.toLowerCase()),
-      )
-      setFilteredHotels(filtered)
-      setShowSuggestions(true)
+          hotel?.address?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      setFilteredHotels(filtered);
+      setShowSuggestions(true);
     } else {
-      setFilteredHotels([])
-      setShowSuggestions(false)
+      setFilteredHotels([]);
+      setShowSuggestions(false);
     }
-  }, [searchQuery, hotels])
+  }, [searchQuery, hotels]);
 
   // Handle click outside to close suggestions
   useEffect(() => {
@@ -199,25 +199,33 @@ export const SearchBar = () => {
         suggestionsRef.current &&
         !suggestionsRef.current.contains(event.target)
       ) {
-        setShowSuggestions(false)
+        setShowSuggestions(false);
       }
-    }
+    };
 
-    document.addEventListener("mousedown", handleClickOutside)
-    return () => document.removeEventListener("mousedown", handleClickOutside)
-  }, [])
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const handleHotelSelect = (hotel) => {
-    setSearchQuery(hotel.hotelName)
+    setSearchQuery(hotel.hotelName);
     // Extract city from address or use a mapping
     navigate(`${Routers.Home_detail}/${hotel._id}`);
-    setShowSuggestions(false)
-  }
+    setShowSuggestions(false);
+  };
 
   const extractCityFromAddress = (address) => {
-    const cities = ["Hà Nội", "Hồ Chí Minh", "Đà Nẵng", "Hải Phòng", "Phú Quốc"]
-    return cities.find((city) => address?.toLowerCase().includes(city.toLowerCase()))
-  }
+    const cities = [
+      "Hà Nội",
+      "Hồ Chí Minh",
+      "Đà Nẵng",
+      "Hải Phòng",
+      "Phú Quốc",
+    ];
+    return cities.find((city) =>
+      address?.toLowerCase().includes(city.toLowerCase())
+    );
+  };
 
   const handleSearch = () => {
     setErrors({
@@ -225,38 +233,38 @@ export const SearchBar = () => {
       checkinDate: false,
       checkoutDate: false,
       dateOrder: false,
-    })
+    });
 
     if (!selectedCity) {
-      setErrorMessage("Please select a location")
-      setShowModal(true)
-      setErrors((prev) => ({ ...prev, address: true }))
-      return
+      setErrorMessage("Please select a location");
+      setShowModal(true);
+      setErrors((prev) => ({ ...prev, address: true }));
+      return;
     }
 
     if (!checkinDate) {
-      setErrorMessage("Please select a check-in date")
-      setShowModal(true)
-      setErrors((prev) => ({ ...prev, checkinDate: true }))
-      return
+      setErrorMessage("Please select a check-in date");
+      setShowModal(true);
+      setErrors((prev) => ({ ...prev, checkinDate: true }));
+      return;
     }
 
     if (!checkoutDate) {
-      setErrorMessage("Please select a check-out date")
-      setShowModal(true)
-      setErrors((prev) => ({ ...prev, checkoutDate: true }))
-      return
+      setErrorMessage("Please select a check-out date");
+      setShowModal(true);
+      setErrors((prev) => ({ ...prev, checkoutDate: true }));
+      return;
     }
 
     if (new Date(checkinDate) >= new Date(checkoutDate)) {
-      setErrorMessage("Check-in date must be before check-out date")
-      setShowModal(true)
-      setErrors((prev) => ({ ...prev, dateOrder: true }))
-      return
+      setErrorMessage("Check-in date must be before check-out date");
+      setShowModal(true);
+      setErrors((prev) => ({ ...prev, dateOrder: true }));
+      return;
     }
 
-    const adults = selectedAdults ? selectedAdults.value : 1
-    const childrens = selectedChildren ? selectedChildren.value : 0
+    const adults = selectedAdults ? selectedAdults.value : 1;
+    const childrens = selectedChildren ? selectedChildren.value : 0;
 
     const SearchInformation = {
       address: selectedCity.value,
@@ -265,19 +273,19 @@ export const SearchBar = () => {
       adults,
       childrens,
       hotelName: searchQuery, // Add hotel name to search
-    }
+    };
 
     dispatch({
       type: SearchActions.SAVE_SEARCH,
       payload: { SearchInformation },
-    })
+    });
 
-    navigate(Routers.HotelSearchPage)
-  }
+    navigate(Routers.HotelSearchPage);
+  };
 
   const closeModal = () => {
-    setShowModal(false)
-  }
+    setShowModal(false);
+  };
 
   const selectStyles = {
     control: (provided) => ({
@@ -287,11 +295,11 @@ export const SearchBar = () => {
       boxShadow: "none",
       width: "100%",
     }),
-  }
+  };
 
   const highlightText = (text, query) => {
-    if (!query) return text
-    const parts = text.split(new RegExp(`(${query})`, "gi"))
+    if (!query) return text;
+    const parts = text.split(new RegExp(`(${query})`, "gi"));
     return parts.map((part, index) =>
       part.toLowerCase() === query.toLowerCase() ? (
         <mark key={index} style={{ backgroundColor: "#fff3cd", padding: "0" }}>
@@ -299,9 +307,9 @@ export const SearchBar = () => {
         </mark>
       ) : (
         part
-      ),
-    )
-  }
+      )
+    );
+  };
 
   return (
     <div style={{ maxWidth: "1800px", margin: "0 auto", marginTop: "-4.5%" }}>
@@ -331,7 +339,9 @@ export const SearchBar = () => {
           }}
         >
           <FaHotel style={{ color: "#2D74FF", fontSize: "24px" }} />
-          <span style={{ color: "black", marginLeft: "10px" }}>Search Hotels</span>
+          <span style={{ color: "black", marginLeft: "10px" }}>
+            Search Hotels
+          </span>
         </div>
 
         {/* Search Bar */}
@@ -391,14 +401,17 @@ export const SearchBar = () => {
                         gap: "1rem",
                         padding: "1rem",
                         cursor: "pointer",
-                        borderBottom: index < filteredHotels.length - 1 ? "1px solid #f3f4f6" : "none",
+                        borderBottom:
+                          index < filteredHotels.length - 1
+                            ? "1px solid #f3f4f6"
+                            : "none",
                         transition: "background-color 0.2s ease",
                       }}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = "#eff6ff"
+                        e.currentTarget.style.backgroundColor = "#eff6ff";
                       }}
                       onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = "transparent"
+                        e.currentTarget.style.backgroundColor = "transparent";
                       }}
                     >
                       <Image
@@ -432,7 +445,9 @@ export const SearchBar = () => {
                             marginBottom: "4px",
                           }}
                         >
-                          <span>{highlightText(hotel.address, searchQuery)}</span>
+                          <span>
+                            {highlightText(hotel.address, searchQuery)}
+                          </span>
                         </div>
                         <div
                           style={{
@@ -496,7 +511,10 @@ export const SearchBar = () => {
           <Col md={4}>
             <Row className="align-items-center">
               <Col className="d-flex flex-grow-1">
-                <InputGroup className="border w-100" style={{ borderRadius: "10px" }}>
+                <InputGroup
+                  className="border w-100"
+                  style={{ borderRadius: "10px" }}
+                >
                   <InputGroup.Text className="bg-transparent border-0">
                     <FaCalendarAlt />
                   </InputGroup.Text>
@@ -510,12 +528,18 @@ export const SearchBar = () => {
                 </InputGroup>
               </Col>
 
-              <Col xs="auto" className="d-flex align-items-center justify-content-center">
+              <Col
+                xs="auto"
+                className="d-flex align-items-center justify-content-center"
+              >
                 <FaArrowRight style={{ fontSize: "1.2rem", color: "#555" }} />
               </Col>
 
               <Col className="d-flex flex-grow-1">
-                <InputGroup className="border w-100" style={{ borderRadius: "10px" }}>
+                <InputGroup
+                  className="border w-100"
+                  style={{ borderRadius: "10px" }}
+                >
                   <InputGroup.Text className="bg-transparent border-0">
                     <FaCalendarAlt />
                   </InputGroup.Text>
@@ -533,7 +557,10 @@ export const SearchBar = () => {
 
           {/* Guests */}
           <Col md={3} className="px-3">
-            <InputGroup className="border" style={{ borderRadius: "10px", padding: "2px" }}>
+            <InputGroup
+              className="border"
+              style={{ borderRadius: "10px", padding: "2px" }}
+            >
               <InputGroup.Text className="bg-transparent border-0">
                 <FaUser />
               </InputGroup.Text>
@@ -576,11 +603,14 @@ export const SearchBar = () => {
       </div>
 
       {/* Error Modal */}
-      <ErrorModal show={showModal} onClose={closeModal} message={errorMessage} />
+      <ErrorModal
+        show={showModal}
+        onClose={closeModal}
+        message={errorMessage}
+      />
     </div>
-  )
-}
-
+  );
+};
 
 function OtherHotels() {
   const dispatch = useAppDispatch();
@@ -821,6 +851,8 @@ const AboutUs = () => {
   );
 };
 const HotelBooking = () => {
+  const navigate = useNavigate();
+  const Auth = useAppSelector((state) => state.Auth.Auth);
   return (
     <Container className="hotel-booking_1" style={{ marginTop: "15%" }}>
       <Row className="align-items-center">
@@ -868,7 +900,28 @@ const HotelBooking = () => {
             us take care of your accommodation needs so you can focus on
             creating unforgettable memories.
           </p>
-          <Button variant="primary" style={{ marginTop: "5%" }}>
+          <Button
+            variant="primary"
+            style={{ marginTop: "5%" }}
+            onClick={() => {
+              if (Auth?._id != -1) {
+                navigate(Routers.ChatPage, {
+                  state: {
+                    receiver: {
+                      _id: 16,
+                      name: "Admin Uroom",
+                      image: {
+                        public_ID: "avatar_admin1",
+                        url: "https://cdn-icons-png.freepik.com/512/4880/4880553.png",
+                      },
+                    },
+                  },
+                });
+              } else {
+                navigate(Routers.LoginPage);
+              }
+            }}
+          >
             Contact Us
           </Button>
         </Col>

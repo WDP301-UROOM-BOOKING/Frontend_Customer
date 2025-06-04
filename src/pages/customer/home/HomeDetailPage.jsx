@@ -726,14 +726,18 @@ export default function HotelDetailPage() {
             }}
             variant="outline-light"
             onClick={() => {
-              navigate(Routers.ChatPage, {
-                state: {
-                  receiver: {
-                    ...hotelDetail.owner,
-                    ownedHotels: [{ hotelName: hotelDetail.hotelName }],
+              if(Auth._id != -1){
+                navigate(Routers.ChatPage, {
+                  state: {
+                    receiver: {
+                      ...hotelDetail.owner,
+                      ownedHotels: [{ hotelName: hotelDetail.hotelName }],
+                    },
                   },
-                },
-              });
+                });
+              }else{
+                navigate(Routers.LoginPage);
+              }
             }}
           >
             Contact with hotel
@@ -870,7 +874,10 @@ export default function HotelDetailPage() {
                 <h3 style={{ fontWeight: "bold", marginTop: "-10px" }}>
                   Contact Hotel:
                 </h3>
-                <p>Phone Number: {hotelDetail.phoneNumber}</p>
+                <p>Phone Number: {hotelDetail.phoneNumber}
+                  <br></br>
+                  Email: {hotelDetail.email}
+                </p>
                 <h3 style={{ fontWeight: "bold", marginTop: "-10px" }}>
                   Highlights of the services
                 </h3>

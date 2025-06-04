@@ -39,7 +39,7 @@ function Footer() {
                   }
                 }}
               >
-                Contact
+                Contact Us
               </a>
               <a href="#">Terms & Conditions</a>
             </div>

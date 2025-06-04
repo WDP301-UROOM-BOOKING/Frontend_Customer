@@ -28,6 +28,7 @@ function CustomerChat() {
   const dispatch = useDispatch();
   const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState();
+  console.log("selectedUser: ", selectedUser);
   const [showSidebar, setShowSidebar] = useState(true);
   const [userMessages, setUserMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
