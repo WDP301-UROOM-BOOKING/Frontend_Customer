@@ -27,6 +27,7 @@ const BookingCheckPage = () => {
     (state) => state.Search.SearchInformation
   );
   const selectedRooms = useAppSelector((state) => state.Search.selectedRooms);
+  const selectedServices = useAppSelector((state) => state.Search.selectedServices);
   const hotelDetail = useAppSelector((state) => state.Search.hotelDetail);
   const navigate = useNavigate();
   const [bookingFor, setBookingFor] = useState("mainGuest");
@@ -49,53 +50,62 @@ const BookingCheckPage = () => {
   const [showAcceptModal, setShowAcceptModal] = useState(false);
 
   const createBooking = async () => {
-
-    const totalPrice= selectedRooms.reduce(
-      (total, { room, amount }) =>
-        total + room.price * amount,
+    const totalRoomPrice = selectedRooms.reduce(
+      (total, { room, amount }) => total + room.price * amount,
       0
     );
 
-    const params= {
+    const totalServicePrice = selectedServices.reduce(
+      (total, service) => total + (service.price * (service.quantity || 1)),
+      0
+    );
+
+    const totalPrice = totalRoomPrice + totalServicePrice;
+
+    const params = {
       hotelId: hotelDetail._id,
       checkOutDate: SearchInformation.checkoutDate,
       checkInDate: SearchInformation.checkinDate,
       totalPrice: totalPrice,
-      roomDetails: selectedRooms
+      roomDetails: selectedRooms.map(({ room, amount }) => ({
+        room: {
+          _id: room._id
+        },
+        amount: amount
+      })),
+      serviceDetails: selectedServices.map(service => ({
+        _id: service._id,
+        quantity: service.quantity || 1
+      }))
     }
 
     try {
       const response = await Factories.create_booking(params);
       if (response?.status === 201) {
-        const reservation= response?.data.reservation
-        console.log("reservation: ", reservation)
-        navigate(Routers.PaymentPage,
-          {
-            state: {
-              createdAt: reservation.createdAt,
-              totalPrice: totalPrice,
-              idReservation: reservation._id,
-              messageSuccess: response?.data.message
-            }
+        const reservation = response?.data.reservation;
+        console.log("reservation: ", reservation);
+        navigate(Routers.PaymentPage, {
+          state: {
+            createdAt: reservation.createdAt,
+            totalPrice: totalPrice,
+            idReservation: reservation._id,
+            messageSuccess: response?.data.message
           }
-        )
-      }else{
-        console.log("unpaidReservation: ", response?.data.unpaidReservation)
-        navigate(Routers.PaymentPage,
-          {
-            state: {
-              createdAt: response?.data.unpaidReservation.createdAt,
-              totalPrice: response?.data.unpaidReservation.totalPrice,
-              idReservation: response?.data.unpaidReservation._id,
-              messageError: response?.data.message
-            }
+        });
+      } else {
+        console.log("unpaidReservation: ", response?.data.unpaidReservation);
+        navigate(Routers.PaymentPage, {
+          state: {
+            createdAt: response?.data.unpaidReservation.createdAt,
+            totalPrice: response?.data.unpaidReservation.totalPrice,
+            idReservation: response?.data.unpaidReservation._id,
+            messageError: response?.data.message
           }
-        )
+        });
       }
     } catch (error) {
       console.error("Error create payment: ", error);
-      navigate(Routers.ErrorPage,)
-    } finally {
+      navigate(Routers.ErrorPage);
     }
   };
 
@@ -258,6 +268,27 @@ const BookingCheckPage = () => {
                   </div>
                 </div>
 
+                <div className="selected-services mb-2">
+                  <h5 className="mb-4">Selected Services</h5>
+                  {selectedServices.length > 0 ? (
+                    selectedServices.map((service) => (
+                      <div
+                        key={service._id}
+                        className="d-flex justify-content-between align-items-center mb-1"
+                      >
+                        <span>
+                          {service.name} ({service.type}) x {service.quantity || 1}:
+                        </span>
+                        <span className="fw-bold">
+                          {Utils.formatCurrency(service.price * (service.quantity || 1))}
+                        </span>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-muted">No additional services selected</p>
+                  )}
+                </div>
+
                 <div
                   className="booking-divider mb-3"
                   style={{
@@ -270,8 +301,11 @@ const BookingCheckPage = () => {
                 <div className="total-price">
                   <div className="d-flex justify-content-between align-items-center">
                     <h5 className="text-danger mb-0">
-                      Total: {Utils.formatCurrency(selectedRooms.reduce((total, { room, amount }) => total + room.price * amount,0))}
-                    </h5>{" "}
+                      Total: {Utils.formatCurrency(
+                        selectedRooms.reduce((total, { room, amount }) => total + room.price * amount, 0) +
+                        selectedServices.reduce((total, service) => total + (service.price * (service.quantity || 1)), 0)
+                      )}
+                    </h5>
                   </div>
                   <div className="small">Includes taxes and fees</div>
                 </div>

@@ -13,6 +13,7 @@ const initState = {
     childrens: 1,
   },
   selectedRooms: [],
+  selectedServices: [],
   hotelDetail: {}
 };
 
@@ -28,12 +29,9 @@ const Reducer = (state = initState, action) => {
     case SearchActions.SAVE_SELECTED_ROOMS:
       return {
         ...state,
-        selectedRooms: [
-          ...action.payload?.selectedRooms,
-        ],
-        hotelDetail: {
-          ...action.payload?.hotelDetail,
-        },
+        selectedRooms: action.payload.selectedRooms,
+        selectedServices: action.payload.selectedServices,
+        hotelDetail: action.payload.hotelDetail,
       };
     default:
       return state;

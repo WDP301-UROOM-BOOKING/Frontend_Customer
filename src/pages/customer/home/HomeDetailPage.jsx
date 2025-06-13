@@ -519,6 +519,7 @@ export default function HotelDetailPage() {
 
   //booking room
   const [selectedRooms, setSelectedRooms] = useState(selectedRoomsTemps ?? []);
+  const [selectedServices, setSelectedServices] = useState([]);
   console.log("selectedRooms: ", selectedRooms);
   const handleAmountChange = (room, amount) => {
     setSelectedRooms((prevSelected) => {
@@ -580,6 +581,43 @@ export default function HotelDetailPage() {
       setSelectedRooms(selectedRoomsTemps);
     }
   }, [selectedRoomsTemps]);
+
+  // Add this function to handle service selection
+  const handleServiceSelection = (service) => {
+    setSelectedServices(prev => {
+      const isSelected = prev.some(s => s._id === service._id);
+      if (isSelected) {
+        return prev.filter(s => s._id !== service._id);
+      } else {
+        return [...prev, service];
+      }
+    });
+  };
+
+  // Add this state for service quantities
+  const [serviceQuantities, setServiceQuantities] = useState({});
+
+  // Add this function to handle service quantity changes
+  const handleServiceQuantityChange = (service, amount) => {
+    setServiceQuantities(prev => ({
+      ...prev,
+      [service._id]: amount
+    }));
+
+    // Update selected services
+    setSelectedServices(prev => {
+      if (amount === 0) {
+        return prev.filter(s => s._id !== service._id);
+      }
+      const isSelected = prev.some(s => s._id === service._id);
+      if (!isSelected) {
+        return [...prev, { ...service, quantity: amount }];
+      }
+      return prev.map(s => 
+        s._id === service._id ? { ...s, quantity: amount } : s
+      );
+    });
+  };
 
   if (!hotelDetail) {
     return (
@@ -1332,6 +1370,113 @@ export default function HotelDetailPage() {
               </div>
             </div>
 
+            <Row className="mt-4 mb-4">
+              <Col>
+                <Card className="p-4">
+                  <h3 style={{ fontWeight: "bold", color: "#1a2b49", marginBottom: "20px" }}>
+                    Services
+                  </h3>
+                  <div className="services-container">
+                    {hotelDetail.services?.length > 0 ? (
+                      <Row>
+                        {hotelDetail.services.map((service, index) => {
+                          if (service.statusActive === "ACTIVE") {
+                            return (
+                              <Col key={service._id || index} xs={12} md={4} lg={4}>
+                                <Card
+                                  style={{
+                                    marginBottom: "20px",
+                                    border: selectedServices.some(s => s._id === service._id) 
+                                      ? "2px solid #1a2b49" 
+                                      : "1px solid #ddd",
+                                    cursor: "pointer",
+                                    transition: "all 0.3s ease",
+                                    height: "100%"
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    e.currentTarget.style.transform = "translateY(-5px)";
+                                    e.currentTarget.style.boxShadow = "0 8px 16px rgba(0,0,0,0.1)";
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.currentTarget.style.transform = "none";
+                                    e.currentTarget.style.boxShadow = "none";
+                                  }}
+                                >
+                                  <Card.Body>
+                                    <Card.Title style={{ fontWeight: "bold" }}>
+                                      {service.name}
+                                      {selectedServices.some(s => s._id === service._id) && (
+                                        <span className="ms-2 badge" style={{
+                                          backgroundColor: "#1a2b49",
+                                          color: "white",
+                                          fontSize: "0.75rem",
+                                          padding: "0.25rem 0.5rem",
+                                          borderRadius: "20px"
+                                        }}>
+                                          Selected
+                                        </span>
+                                      )}
+                                    </Card.Title>
+                                    <Card.Text>
+                                      <p>{service.description}</p>
+                                      <p style={{ fontWeight: "bold", color: "#1a2b49" }}>
+                                        {Utils.formatCurrency(service.price)}/{service.type}
+                                      </p>
+                                    </Card.Text>
+                                    <div className="d-flex align-items-center justify-content-between mt-3">
+                                      <div className="d-flex align-items-center">
+                                        <Button
+                                          variant="outline-secondary"
+                                          size="sm"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            const currentQty = serviceQuantities[service._id] || 0;
+                                            if (currentQty > 0) {
+                                              handleServiceQuantityChange(service, currentQty - 1);
+                                            }
+                                          }}
+                                          style={{ width: "30px", height: "30px", padding: 0 }}
+                                        >
+                                          -
+                                        </Button>
+                                        <span className="mx-3" style={{ minWidth: "30px", textAlign: "center" }}>
+                                          {serviceQuantities[service._id] || 0}
+                                        </span>
+                                        <Button
+                                          variant="outline-secondary"
+                                          size="sm"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            const currentQty = serviceQuantities[service._id] || 0;
+                                            handleServiceQuantityChange(service, currentQty + 1);
+                                          }}
+                                          style={{ width: "30px", height: "30px", padding: 0 }}
+                                        >
+                                          +
+                                        </Button>
+                                      </div>
+                                      <div className="text-end">
+                                        <p className="mb-0" style={{ fontWeight: "bold", color: "#1a2b49" }}>
+                                          Total: {Utils.formatCurrency(service.price * (serviceQuantities[service._id] || 0))}
+                                        </p>
+                                      </div>
+                                    </div>
+                                  </Card.Body>
+                                </Card>
+                              </Col>
+                            );
+                          }
+                          return null;
+                        })}
+                      </Row>
+                    ) : (
+                      <p>No additional services available.</p>
+                    )}
+                  </div>
+                </Card>
+              </Col>
+            </Row>
+
             <div className="text-center mt-5">
               <Button
                 variant="primary"
@@ -1351,6 +1496,7 @@ export default function HotelDetailPage() {
                           type: SearchActions.SAVE_SELECTED_ROOMS,
                           payload: {
                             selectedRooms: selectedRooms,
+                            selectedServices: selectedServices,
                             hotelDetail: hotelDetail,
                           },
                         });
@@ -1360,6 +1506,7 @@ export default function HotelDetailPage() {
                           type: SearchActions.SAVE_SELECTED_ROOMS,
                           payload: {
                             selectedRooms: selectedRooms,
+                            selectedServices: selectedServices,
                             hotelDetail: hotelDetail,
                           },
                         });
@@ -1826,7 +1973,7 @@ export default function HotelDetailPage() {
               </div>
               <h5 className="text-muted fw-semibold">No Reviews Yet</h5>
               <p className="text-secondary mb-0" style={{ maxWidth: 300 }}>
-                This hotel hasn’t received any reviews yet. Be the first to
+                This hotel hasn't received any reviews yet. Be the first to
                 share your experience!
               </p>
             </div>
