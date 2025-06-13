@@ -31,7 +31,18 @@ const BookingCheckPage = () => {
   const hotelDetail = useAppSelector((state) => state.Search.hotelDetail);
   const navigate = useNavigate();
   const [bookingFor, setBookingFor] = useState("mainGuest");
-  
+
+  // Calculate number of days between check-in and check-out
+  const calculateNumberOfDays = () => {
+    const checkIn = new Date(SearchInformation.checkinDate);
+    const checkOut = new Date(SearchInformation.checkoutDate);
+    const diffTime = Math.abs(checkOut - checkIn);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+  };
+
+  const numberOfDays = calculateNumberOfDays();
+
   // Star rating component
   const StarRating = ({ rating }) => {
     return (
@@ -51,12 +62,16 @@ const BookingCheckPage = () => {
 
   const createBooking = async () => {
     const totalRoomPrice = selectedRooms.reduce(
-      (total, { room, amount }) => total + room.price * amount,
+      (total, { room, amount }) => total + room.price * amount * numberOfDays,
       0
     );
 
     const totalServicePrice = selectedServices.reduce(
-      (total, service) => total + (service.price * (service.quantity || 1)),
+      (total, service) => {
+        const selectedDates = service.selectedDates || [];
+        const serviceQuantity = service.quantity * selectedDates.length;
+        return total + (service.price * serviceQuantity);
+      },
       0
     );
 
@@ -75,7 +90,8 @@ const BookingCheckPage = () => {
       })),
       serviceDetails: selectedServices.map(service => ({
         _id: service._id,
-        quantity: service.quantity || 1
+        quantity: service.quantity * (service.selectedDates?.length || 0),
+        selectDate: service.selectedDates || []
       }))
     }
 
@@ -83,7 +99,6 @@ const BookingCheckPage = () => {
       const response = await Factories.create_booking(params);
       if (response?.status === 201) {
         const reservation = response?.data.reservation;
-        console.log("reservation: ", reservation);
         navigate(Routers.PaymentPage, {
           state: {
             createdAt: reservation.createdAt,
@@ -93,7 +108,6 @@ const BookingCheckPage = () => {
           }
         });
       } else {
-        console.log("unpaidReservation: ", response?.data.unpaidReservation);
         navigate(Routers.PaymentPage, {
           state: {
             createdAt: response?.data.unpaidReservation.createdAt,
@@ -216,10 +230,7 @@ const BookingCheckPage = () => {
                   <div className="d-flex justify-content-between mb-2">
                     <span>Total length of stay:</span>
                     <span className="fw-bold">
-                      {(new Date(SearchInformation.checkoutDate) -
-                        new Date(SearchInformation.checkinDate)) /
-                        (1000 * 60 * 60 * 24)}{" "}
-                      night
+                      {numberOfDays} night
                     </span>{" "}
                   </div>
                   <div className="d-flex justify-content-between mb-3">
@@ -249,9 +260,11 @@ const BookingCheckPage = () => {
                       className="d-flex justify-content-between align-items-center mb-1"
                     >
                       <span>
-                        {amount} x {room.name}:
+                        {amount} x {room.name} ({numberOfDays} days):
                       </span>
-                      <span className="fw-bold">{Utils.formatCurrency(room.price * amount)}</span>
+                      <span className="fw-bold">
+                        {Utils.formatCurrency(room.price * amount * numberOfDays)}
+                      </span>
                     </div>
                   ))}
 
@@ -268,26 +281,44 @@ const BookingCheckPage = () => {
                   </div>
                 </div>
 
-                <div className="selected-services mb-2">
-                  <h5 className="mb-4">Selected Services</h5>
-                  {selectedServices.length > 0 ? (
-                    selectedServices.map((service) => (
-                      <div
-                        key={service._id}
-                        className="d-flex justify-content-between align-items-center mb-1"
-                      >
-                        <span>
-                          {service.name} ({service.type}) x {service.quantity || 1}:
-                        </span>
-                        <span className="fw-bold">
-                          {Utils.formatCurrency(service.price * (service.quantity || 1))}
-                        </span>
-                      </div>
-                    ))
-                  ) : (
-                    <p className="text-muted">No additional services selected</p>
-                  )}
-                </div>
+                {/* Selected Services Section */}
+                {selectedServices.length > 0 && (
+                  <div className="selected-services mb-2">
+                    <h5 className="mb-4">Selected Services</h5>
+                    {selectedServices.map((service) => {
+                      const selectedDates = service.selectedDates || [];
+                      const serviceQuantity = service.quantity * selectedDates.length;
+                      const serviceTotal = service.price * serviceQuantity;
+
+                      return (
+                        <div key={service._id} className="mb-3">
+                          <div className="d-flex justify-content-between align-items-center mb-1">
+                            <span>
+                              {service.name} ({service.type}) x {serviceQuantity}:
+                              <br />
+                              <small className="text-muted">
+                                ({service.quantity} {service.type} x {selectedDates.length} days)
+                              </small>
+                            </span>
+                            <span className="fw-bold">
+                              {Utils.formatCurrency(serviceTotal)}
+                            </span>
+                          </div>
+                          {selectedDates.length > 0 && (
+                            <div className="small text-muted">
+                              Selected dates: {selectedDates.map(date => 
+                                new Date(date).toLocaleDateString()
+                              ).join(', ')}
+                            </div>
+                          )}
+                          <div className="small text-muted">
+                            Price per {service.type}: {Utils.formatCurrency(service.price)}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
 
                 <div
                   className="booking-divider mb-3"
@@ -302,8 +333,13 @@ const BookingCheckPage = () => {
                   <div className="d-flex justify-content-between align-items-center">
                     <h5 className="text-danger mb-0">
                       Total: {Utils.formatCurrency(
-                        selectedRooms.reduce((total, { room, amount }) => total + room.price * amount, 0) +
-                        selectedServices.reduce((total, service) => total + (service.price * (service.quantity || 1)), 0)
+                        selectedRooms.reduce((total, { room, amount }) => 
+                          total + room.price * amount * numberOfDays, 0) +
+                        selectedServices.reduce((total, service) => {
+                          const selectedDates = service.selectedDates || [];
+                          const serviceQuantity = service.quantity * selectedDates.length;
+                          return total + (service.price * serviceQuantity);
+                        }, 0)
                       )}
                     </h5>
                   </div>
