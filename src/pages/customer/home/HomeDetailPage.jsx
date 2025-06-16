@@ -102,15 +102,12 @@ export default function HotelDetailPage() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const Auth = useAppSelector((state) => state.Auth.Auth);
-  const SearchInformation = useAppSelector(
-    (state) => state.Search.SearchInformation
-  );
-  const selectedRoomsTemps = useAppSelector(
-    (state) => state.Search.selectedRooms
-  );
-  const [showModalStatusBooking, setShowModalStatusBooking] = useState(false);
+  const SearchInformation = useAppSelector((state) => state.Search.SearchInformation);
+  const selectedRoomsTemps = useAppSelector((state) => state.Search.selectedRooms);
+  const selectedServicesFromRedux = useAppSelector((state) => state.Search.selectedServices);
 
   // State variables
+  const [showModalStatusBooking, setShowModalStatusBooking] = useState(false);
   const [hotelDetail, setHotelDetail] = useState(null);
   const [mainImage, setMainImage] = useState("");
   const [isFavorite, setIsFavorite] = useState(false);
@@ -132,7 +129,6 @@ export default function HotelDetailPage() {
   const [currentPage, setCurrentPage] = useState(Number(pageTemp) ?? 1);
   const [sort, setSort] = useState(Number(sortTemp) ?? 0);
   const [star, setStar] = useState(Number(starTemp) ?? 0);
-
   const [filterParams, setFilterParams] = useState({
     page: currentPage,
     sort: sort,
@@ -140,24 +136,8 @@ export default function HotelDetailPage() {
   });
   const [showModal, setShowModal] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-
-  // Search state
   const [checkinDate, setCheckinDate] = useState(SearchInformation.checkinDate);
-  const [checkoutDate, setCheckoutDate] = useState(
-    SearchInformation.checkoutDate
-  );
-
-  useEffect(() => {
-    const checkin = new Date(checkinDate);
-    const checkout = new Date(checkoutDate);
-
-    if (checkin.getTime() === checkout.getTime()) {
-      const nextDay = new Date(checkin);
-      nextDay.setDate(checkin.getDate() + 1);
-      setCheckoutDate(nextDay.toISOString().split("T")[0]); // format as yyyy-mm-dd
-    }
-  }, [checkoutDate, checkinDate]);
-
+  const [checkoutDate, setCheckoutDate] = useState(SearchInformation.checkoutDate);
   const [selectedAdults, setSelectedAdults] = useState(
     adultsOptions.find((option) => option.value === SearchInformation.adults) ||
       adultsOptions[0]
@@ -168,16 +148,55 @@ export default function HotelDetailPage() {
     ) || childrenOptions[0]
   );
   const [isSearching, setIsSearching] = useState(false);
+  const [searchRoom, setSearchRoom] = useState(false);
+  const [showModalService, setShowModalService] = useState(false);
+  const [selectedService, setSelectedService] = useState(null);
+  const [serviceQuantities, setServiceQuantities] = useState({});
+  const [serviceSelectedDates, setServiceSelectedDates] = useState({});
+  const [showDateSelector, setShowDateSelector] = useState(false);
+  const [currentService, setCurrentService] = useState(null);
+  const [selectedServices, setSelectedServices] = useState([]);
+  const [selectedRooms, setSelectedRooms] = useState(selectedRoomsTemps ?? []);
 
+  // Add event listener for popstate at the top level
   useEffect(() => {
-    setSelectedRooms([]);
-    dispatch({
-      type: SearchActions.SAVE_SELECTED_ROOMS,
-      payload: {
-        selectedRooms: [],
-      },
-    });
-  }, [hotelId]);
+    const handlePopState = () => {
+      handleBackToBooking();
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, []);
+
+  // Add function to handle back navigation
+  const handleBackToBooking = () => {
+    // Get the stack
+    const bookingStack = JSON.parse(sessionStorage.getItem('bookingStack') || '[]');
+    
+    // If stack is not empty, pop the last item
+    if (bookingStack.length > 0) {
+      const lastBooking = bookingStack.pop();
+      sessionStorage.setItem('bookingStack', JSON.stringify(bookingStack));
+      
+      // Update Redux store
+      dispatch({
+        type: SearchActions.SAVE_SELECTED_ROOMS,
+        payload: {
+          selectedRooms: lastBooking.selectedRooms,
+          selectedServices: lastBooking.selectedServices,
+          hotelDetail: {
+            ...lastBooking.hotelDetail,
+            star: lastBooking.hotelDetail.star || 0 // Ensure star property exists
+          },
+        },
+      });
+    }
+    
+    navigate(Routers.BookingCheckPage);
+  };
+
   // Update URL when filters change
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -283,20 +302,6 @@ export default function HotelDetailPage() {
       isMounted = false;
     };
   }, [hotelId, dispatch]);
-
-  const [searchRoom, setSearchRoom] = useState(false);
-
-  // Service related states
-  const [showModalService, setShowModalService] = useState(false);
-  const [selectedService, setSelectedService] = useState(null);
-  const [serviceQuantities, setServiceQuantities] = useState({});
-  const [serviceSelectedDates, setServiceSelectedDates] = useState({});
-  const [showDateSelector, setShowDateSelector] = useState(false);
-  const [currentService, setCurrentService] = useState(null);
-  const [selectedServices, setSelectedServices] = useState([]);
-
-  // Room related states
-  const [selectedRooms, setSelectedRooms] = useState(selectedRoomsTemps ?? []);
 
   const handleSearchRoom = () => {
     const adults = selectedAdults ? selectedAdults.value : 1;
@@ -601,12 +606,27 @@ export default function HotelDetailPage() {
     return foundRoom ? foundRoom.amount : 0;
   };
 
-  // Initialize selectedRooms with data from Redux when component mounts
+  // Initialize selectedRooms and selectedServices with data from Redux when component mounts
   useEffect(() => {
     if (selectedRoomsTemps && selectedRoomsTemps.length > 0) {
       setSelectedRooms(selectedRoomsTemps);
     }
-  }, [selectedRoomsTemps]);
+    
+    // Restore selected services from Redux
+    if (selectedServicesFromRedux && selectedServicesFromRedux.length > 0) {
+      setSelectedServices(selectedServicesFromRedux);
+      
+      // Restore service quantities and dates
+      const quantities = {};
+      const dates = {};
+      selectedServicesFromRedux.forEach(service => {
+        quantities[service._id] = service.quantity;
+        dates[service._id] = service.selectedDates;
+      });
+      setServiceQuantities(quantities);
+      setServiceSelectedDates(dates);
+    }
+  }, [selectedRoomsTemps, selectedServicesFromRedux]);
 
   // Add this function to handle service selection
   const handleServiceSelection = (service) => {
@@ -692,83 +712,66 @@ export default function HotelDetailPage() {
 
   if (!hotelDetail) {
     return (
-      <div
-        className="loading-container"
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          height: "100vh",
-          backgroundColor: "#f8f9fa",
-        }}
-      >
-        <div
-          className="loading-animation"
-          style={{
-            position: "relative",
-            width: "80px",
-            height: "80px",
-            marginBottom: "20px",
-          }}
-        >
-          <div
-            style={{
-              position: "absolute",
-              width: "64px",
-              height: "64px",
-              border: "8px solid #e0e0e0",
-              borderRadius: "50%",
-              animation: "spin 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite",
-              borderColor: "#1a2b49 transparent transparent transparent",
-            }}
-          ></div>
-          <div
-            style={{
-              position: "absolute",
-              width: "64px",
-              height: "64px",
-              border: "8px solid #e0e0e0",
-              borderRadius: "50%",
-              animation: "spin 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite",
-              borderColor: "transparent #1a2b49 transparent transparent",
-              animationDelay: "-0.45s",
-            }}
-          ></div>
-          <div
-            style={{
-              position: "absolute",
-              width: "64px",
-              height: "64px",
-              border: "8px solid #e0e0e0",
-              borderRadius: "50%",
-              animation: "spin 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite",
-              borderColor: "transparent transparent #1a2b49 transparent",
-              animationDelay: "-0.3s",
-            }}
-          ></div>
-          <div
-            style={{
-              position: "absolute",
-              width: "64px",
-              height: "64px",
-              border: "8px solid #e0e0e0",
-              borderRadius: "50%",
-              animation: "spin 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite",
-              borderColor: "transparent transparent transparent #1a2b49",
-              animationDelay: "-0.15s",
-            }}
-          ></div>
+      <div className="loading-container" style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        height: "100vh",
+        backgroundColor: "#f8f9fa",
+      }}>
+        <div className="loading-animation" style={{
+          position: "relative",
+          width: "80px",
+          height: "80px",
+          marginBottom: "20px",
+        }}>
+          <div style={{
+            position: "absolute",
+            width: "64px",
+            height: "64px",
+            border: "8px solid #e0e0e0",
+            borderRadius: "50%",
+            animation: "spin 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite",
+            borderColor: "#1a2b49 transparent transparent transparent",
+          }}></div>
+          <div style={{
+            position: "absolute",
+            width: "64px",
+            height: "64px",
+            border: "8px solid #e0e0e0",
+            borderRadius: "50%",
+            animation: "spin 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite",
+            borderColor: "transparent #1a2b49 transparent transparent",
+            animationDelay: "-0.45s",
+          }}></div>
+          <div style={{
+            position: "absolute",
+            width: "64px",
+            height: "64px",
+            border: "8px solid #e0e0e0",
+            borderRadius: "50%",
+            animation: "spin 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite",
+            borderColor: "transparent transparent #1a2b49 transparent",
+            animationDelay: "-0.3s",
+          }}></div>
+          <div style={{
+            position: "absolute",
+            width: "64px",
+            height: "64px",
+            border: "8px solid #e0e0e0",
+            borderRadius: "50%",
+            animation: "spin 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite",
+            borderColor: "transparent transparent transparent #1a2b49",
+            animationDelay: "-0.15s",
+          }}></div>
         </div>
-        <div
-          className="loading-text"
-          style={{
-            fontSize: "18px",
-            fontWeight: "500",
-            color: "#1a2b49",
-            textAlign: "center",
-          }}
-        >
+        <div className="loading-text" style={{
+          fontSize: "18px",
+          fontWeight: "500",
+          color: "#1a2b49",
+          textAlign: "center",
+        }}>
           <p>Loading your perfect stay...</p>
           <p style={{ fontSize: "14px", color: "#6c757d", marginTop: "5px" }}>
             Please wait while we prepare the best offers for you
@@ -823,7 +826,8 @@ export default function HotelDetailPage() {
     });
 
     if (invalidServices.length > 0) {
-      showToast.warning("Please select dates for all services");
+      setErrorMessage(`Please select dates for the following services: ${invalidServices.map(s => s.name).join(', ')}`);
+      setShowModal(true);
       return;
     }
 
@@ -839,12 +843,36 @@ export default function HotelDetailPage() {
       selectedDates: serviceSelectedDates[service._id] || []
     }));
 
+    // Save booking data to sessionStorage stack
+    const bookingData = {
+      selectedRooms: selectedRooms,
+      selectedServices: servicesWithDetails,
+      hotelDetail: {
+        ...hotelDetail,
+        star: hotelDetail.star || 0 // Ensure star property exists
+      },
+      searchInfo: {
+        checkinDate,
+        checkoutDate,
+        adults: selectedAdults.value,
+        childrens: selectedChildren.value
+      }
+    };
+
+    // Get existing stack or initialize new one
+    const bookingStack = JSON.parse(sessionStorage.getItem('bookingStack') || '[]');
+    bookingStack.push(bookingData);
+    sessionStorage.setItem('bookingStack', JSON.stringify(bookingStack));
+
     dispatch({
       type: SearchActions.SAVE_SELECTED_ROOMS,
       payload: {
         selectedRooms: selectedRooms,
         selectedServices: servicesWithDetails,
-        hotelDetail: hotelDetail,
+        hotelDetail: {
+          ...hotelDetail,
+          star: hotelDetail.star || 0 // Ensure star property exists
+        },
       },
     });
 

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Container,
   Row,
@@ -16,26 +16,72 @@ import Footer from "../Footer";
 import * as Routers from "../../../utils/Routes";
 import { useNavigate } from "react-router-dom";
 import ConfirmationModal from "@components/ConfirmationModal";
-import { useAppSelector } from "../../../redux/store";
+import { useAppSelector, useAppDispatch } from "../../../redux/store";
 import Utils from "../../../utils/Utils";
 import Factories from "../../../redux/search/factories";
 import { ChatBox } from "./HomePage";
+import SearchActions from "../../../redux/search/actions";
 
 const BookingCheckPage = () => {
   const Auth = useAppSelector((state) => state.Auth.Auth);
   const SearchInformation = useAppSelector(
     (state) => state.Search.SearchInformation
   );
-  const selectedRooms = useAppSelector((state) => state.Search.selectedRooms);
-  const selectedServices = useAppSelector((state) => state.Search.selectedServices);
-  const hotelDetail = useAppSelector((state) => state.Search.hotelDetail);
+  const selectedRoomsTemps = useAppSelector((state) => state.Search.selectedRooms);
+  const selectedServicesFromRedux = useAppSelector((state) => state.Search.selectedServices);
+  const hotelDetailFromRedux = useAppSelector((state) => state.Search.hotelDetail);
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
   const [bookingFor, setBookingFor] = useState("mainGuest");
+
+  // Add state for booking data
+  const [bookingData, setBookingData] = useState({
+    selectedRooms: selectedRoomsTemps || [],
+    selectedServices: selectedServicesFromRedux || [],
+    hotelDetail: hotelDetailFromRedux || null,
+    searchInfo: SearchInformation
+  });
+
+  // Restore data from sessionStorage stack when component mounts
+  useEffect(() => {
+    const bookingStack = JSON.parse(sessionStorage.getItem('bookingStack') || '[]');
+    if (bookingStack.length > 0) {
+      const currentBooking = bookingStack[bookingStack.length - 1];
+      setBookingData(currentBooking);
+      
+      // Update Redux store with current data
+      dispatch({
+        type: SearchActions.SAVE_SELECTED_ROOMS,
+        payload: {
+          selectedRooms: currentBooking.selectedRooms,
+          selectedServices: currentBooking.selectedServices,
+          hotelDetail: currentBooking.hotelDetail,
+        },
+      });
+    }
+  }, [dispatch]);
+
+  // Handle navigation back to HomeDetailPage
+  const handleBackToHomeDetail = () => {
+    const bookingStack = JSON.parse(sessionStorage.getItem('bookingStack') || '[]');
+    if (bookingStack.length > 0) {
+      // Remove the current booking from stack
+      bookingStack.pop();
+      sessionStorage.setItem('bookingStack', JSON.stringify(bookingStack));
+    }
+    navigate(-1);
+  };
+
+  // Use bookingData instead of Redux state
+  const selectedRooms = bookingData.selectedRooms;
+  const selectedServices = bookingData.selectedServices;
+  const hotelDetail = bookingData.hotelDetail;
+  const searchInfo = bookingData.searchInfo;
 
   // Calculate number of days between check-in and check-out
   const calculateNumberOfDays = () => {
-    const checkIn = new Date(SearchInformation.checkinDate);
-    const checkOut = new Date(SearchInformation.checkoutDate);
+    const checkIn = new Date(searchInfo.checkinDate);
+    const checkOut = new Date(searchInfo.checkoutDate);
     const diffTime = Math.abs(checkOut - checkIn);
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays;
@@ -79,8 +125,8 @@ const BookingCheckPage = () => {
 
     const params = {
       hotelId: hotelDetail._id,
-      checkOutDate: SearchInformation.checkoutDate,
-      checkInDate: SearchInformation.checkinDate,
+      checkOutDate: searchInfo.checkoutDate,
+      checkInDate: searchInfo.checkinDate,
       totalPrice: totalPrice,
       roomDetails: selectedRooms.map(({ room, amount }) => ({
         room: {
@@ -140,6 +186,17 @@ const BookingCheckPage = () => {
     maximumFractionDigits: 0,
     }).format(amount);
   };
+
+  // Add null check for hotelDetail
+  if (!hotelDetail) {
+    return (
+      <div className="d-flex justify-content-center align-items-center" style={{ height: "100vh" }}>
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Loading...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -207,7 +264,7 @@ const BookingCheckPage = () => {
                         Checkin
                       </div>
                       <div className="time">
-                        {Utils.getDate(SearchInformation.checkinDate, 1)}
+                        {Utils.getDate(searchInfo.checkinDate, 1)}
                       </div>
                     </div>
                   </Col>
@@ -220,7 +277,7 @@ const BookingCheckPage = () => {
                         Checkout
                       </div>
                       <div className="time">
-                        {Utils.getDate(SearchInformation.checkoutDate, 1)}
+                        {Utils.getDate(searchInfo.checkoutDate, 1)}
                       </div>
                     </div>
                   </Col>
@@ -236,8 +293,8 @@ const BookingCheckPage = () => {
                   <div className="d-flex justify-content-between mb-3">
                     <span>Total number of people:</span>
                     <span className="fw-bold">
-                      {SearchInformation.adults} Adults -{" "}
-                      {SearchInformation.childrens} Childrens
+                      {searchInfo.adults} Adults -{" "}
+                      {searchInfo.childrens} Childrens
                     </span>
                   </div>
                 </div>
@@ -272,9 +329,7 @@ const BookingCheckPage = () => {
                     <a
                       className="text-blue text-decoration-none"
                       style={{cursor: 'pointer'}}
-                      onClick={() => {
-                        navigate(-1);
-                      }}
+                      onClick={handleBackToHomeDetail}
                     >
                       Change your selection
                     </a>
@@ -283,7 +338,7 @@ const BookingCheckPage = () => {
 
                 {/* Selected Services Section */}
                 {selectedServices.length > 0 && (
-                  <div className="selected-services mb-2">
+                  <div className="selected-services" style={{ marginBottom: "1rem" }}>
                     <h5 className="mb-4">Selected Services</h5>
                     {selectedServices.map((service) => {
                       const selectedDates = service.selectedDates || [];
@@ -292,11 +347,11 @@ const BookingCheckPage = () => {
 
                       return (
                         <div key={service._id} className="mb-3">
-                          <div className="d-flex justify-content-between align-items-center mb-1">
+                          <div className="d-flex justify-content-between align-items-center mb-2">
                             <span>
                               {service.name} ({service.type}) x {serviceQuantity}:
                               <br />
-                              <small className="text-muted">
+                              <small className="text-white-50">
                                 ({service.quantity} {service.type} x {selectedDates.length} days)
                               </small>
                             </span>
@@ -305,18 +360,37 @@ const BookingCheckPage = () => {
                             </span>
                           </div>
                           {selectedDates.length > 0 && (
-                            <div className="small text-muted">
+                            <div className="small text-white-50 mb-2">
                               Selected dates: {selectedDates.map(date => 
                                 new Date(date).toLocaleDateString()
                               ).join(', ')}
                             </div>
                           )}
-                          <div className="small text-muted">
+                          <div className="small text-white-50 mb-2">
                             Price per {service.type}: {Utils.formatCurrency(service.price)}
                           </div>
                         </div>
                       );
                     })}
+                    <div className="small mt-3">
+                      <a
+                        className="text-blue text-decoration-none"
+                        style={{cursor: 'pointer'}}
+                        onClick={() => {
+                          dispatch({
+                            type: SearchActions.SAVE_SELECTED_ROOMS,
+                            payload: {
+                              selectedRooms: selectedRooms,
+                              selectedServices: selectedServices,
+                              hotelDetail: hotelDetail,
+                            },
+                          });
+                          navigate(-1);
+                        }}
+                      >
+                        Change your service
+                      </a>
+                    </div>
                   </div>
                 )}
 
