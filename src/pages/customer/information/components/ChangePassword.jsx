@@ -15,8 +15,9 @@ import { useDispatch } from "react-redux";
 import AuthActions from "../../../../redux/auth/actions";
 const ChangePassword = () => {
   const dispatch = useDispatch();
-
+//show password toggle password visibility
   const [showPassword, setShowPassword] = useState(false);
+  const [oldPasswordError, setOldPasswordError] = useState(false);
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
   };
@@ -32,10 +33,14 @@ const ChangePassword = () => {
       ...formData,
       [name]: value,
     });
+    if (name === 'oldPassword') {
+      setOldPasswordError(false);
+    }
   };
+  //show modal
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [showAcceptModal, setShowAcceptModal] = useState(false);
-
+// handle cancel and save
   const handleCancel = () => {
     const { oldPassword, newPassword, againNewPassword } = formData;
     if (!oldPassword || !newPassword || !againNewPassword) {
@@ -47,7 +52,8 @@ const ChangePassword = () => {
     setShowUpdateModal(false);
   };
 
-  const handleSave = () => {
+  const handleSubmit = (e) => {
+    e.preventDefault();
     const { oldPassword, newPassword, againNewPassword } = formData;
 
     if (!oldPassword || !newPassword || !againNewPassword) {
@@ -55,11 +61,7 @@ const ChangePassword = () => {
       return;
     }
 
-    if (
-      oldPassword.length < 8 ||
-      newPassword.length < 8 ||
-      againNewPassword.length < 8
-    ) {
+    if (oldPassword.length < 8 || newPassword.length < 8 || againNewPassword.length < 8) {
       showToast.warning("All passwords must be at least 8 characters long.");
       return;
     }
@@ -69,6 +71,36 @@ const ChangePassword = () => {
       return;
     }
 
+    // Check old password first
+    dispatch({
+      type: AuthActions.CHANGE_PASSWORD,
+      payload: {
+        data: {
+          currentPassword: oldPassword,
+          newPassword: oldPassword, // Temporarily use old password as new password for validation
+          confirmPassword: oldPassword,
+        },
+        onSuccess: () => {
+          setShowAcceptModal(true);
+        },
+        onFailed: (msg) => {
+          if (msg.includes("Current password is incorrect")) {
+            setOldPasswordError(true);
+            showToast.warning("Current password is incorrect");
+          } else {
+            showToast.warning(`Validation failed: ${msg}`);
+          }
+        },
+        onError: (err) => {
+          console.error(err);
+          showToast.warning("An error occurred while validating password.");
+        },
+      },
+    });
+  };
+
+  const handleSave = () => {
+    const { oldPassword, newPassword, againNewPassword } = formData;
     dispatch({
       type: AuthActions.CHANGE_PASSWORD,
       payload: {
@@ -80,6 +112,7 @@ const ChangePassword = () => {
         onSuccess: () => {
           showToast.success("Password changed successfully!");
           setFormData(initialFormData);
+          setShowAcceptModal(false);
         },
         onFailed: (msg) => {
           showToast.warning(`Change failed: ${msg}`);
@@ -90,13 +123,6 @@ const ChangePassword = () => {
         },
       },
     });
-
-    setShowAcceptModal(false);
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    setShowAcceptModal(true);
   };
 
   return (
@@ -114,7 +140,8 @@ const ChangePassword = () => {
                   name="oldPassword"
                   value={formData.oldPassword}
                   onChange={handleChange}
-                  className="py-2"
+                  className={`py-2 ${oldPasswordError ? 'border-danger' : ''}`}
+                  isInvalid={oldPasswordError}
                 />
                 <Button
                   variant="link"
@@ -123,6 +150,11 @@ const ChangePassword = () => {
                 >
                   {showPassword ? <FaEyeSlash /> : <FaEye />}
                 </Button>
+                {oldPasswordError && (
+                  <Form.Control.Feedback type="invalid">
+                    Current password is incorrect
+                  </Form.Control.Feedback>
+                )}
               </div>
             </Form.Group>
           </Col>
@@ -190,9 +222,6 @@ const ChangePassword = () => {
             variant="primary"
             type="submit"
             style={{ width: "100px" }}
-            onClick={() => {
-              setShowAcceptModal(true);
-            }}
           >
             SAVE
           </Button>
