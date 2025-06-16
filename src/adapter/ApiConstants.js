@@ -53,6 +53,7 @@ const ApiConstants = {
   //REFUNDING_RESERVATION
   CREATE_REFUNDING_RESERVATION: "refunding_reservation/create",
   GET_REFUNDING_RESERVATION_BYUSERID: "refunding_reservation/by_userId",
+  UPDATE_BANKING_INFO: "refunding_reservation/banking-info",
   
   ///REPORTFEEDBACK
   REPORT_FEEDBACK:"reportFeedback/create_report_feedback",

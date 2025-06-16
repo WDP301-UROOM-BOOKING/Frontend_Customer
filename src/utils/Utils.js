@@ -90,6 +90,15 @@ export default class Utils {
 
     return Utils.getDate(timestamp, isToday ? 11 : 18, timezone);
   };
+
+  static calculateTotalPrice = (rooms) => {
+    if (!rooms || !Array.isArray(rooms)) return 0;
+    return rooms.reduce((total, roomItem) => {
+      const roomPrice = roomItem.room?.price || 0;
+      const quantity = roomItem.quantity || 1;
+      return total + roomPrice * quantity;
+    }, 0);
+  };
 }
 
 export const cloudName = "dnel8ng9g";

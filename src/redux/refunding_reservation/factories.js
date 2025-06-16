@@ -13,6 +13,10 @@ const Factories = {
     const url = `${ApiConstants.GET_REFUNDING_RESERVATION_BYUSERID}`
     return api.get(url);
   },
+  update_banking_info: ({ refundId, accountHolderName, accountNumber, bankName }) => {
+    const url = `${ApiConstants.UPDATE_BANKING_INFO}/${refundId}`;
+    return api.put(url, { accountHolderName, accountNumber, bankName });
+  }
 };
 
 export default Factories;
