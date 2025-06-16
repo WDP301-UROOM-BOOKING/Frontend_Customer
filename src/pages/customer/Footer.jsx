@@ -32,8 +32,19 @@ function Footer() {
               <a
                 href=""
                 onClick={() => {
-                  if (Auth._id != -1) {
-                    navigate(Routers.ChatPage);
+                  if (Auth?._id != -1) {
+                    navigate(Routers.ChatPage, {
+                      state: {
+                        receiver: {
+                          _id: 16,
+                          name: "Admin Uroom",
+                          image: {
+                            public_ID: "avatar_admin1",
+                            url: "https://cdn-icons-png.freepik.com/512/4880/4880553.png",
+                          },
+                        },
+                      },
+                    });
                   } else {
                     navigate(Routers.LoginPage);
                   }

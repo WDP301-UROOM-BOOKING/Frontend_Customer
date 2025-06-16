@@ -157,8 +157,8 @@ const BookingHistory = () => {
       },
     });
   };
-  
-  console.log("res: ", reservations)
+
+  console.log("res: ", reservations);
   function parseCurrency(formatted) {
     if (!formatted) return 0; // hoặc null tùy vào yêu cầu
     const numericString = formatted.replace(/[^\d]/g, "");
@@ -257,6 +257,7 @@ const BookingHistory = () => {
     setActivePage(pageNumber);
   };
 
+  console.log("Selected Reservation: ", selectedReservation);
   const handleCancelBooking = async (id) => {
     console.log("A: ", accountHolderName);
     console.log("A: ", accountNumber);
@@ -277,12 +278,10 @@ const BookingHistory = () => {
       } finally {
       }
 
-      const refundPolicy = calculateRefundPolicy();
-
       try {
         const response = await Factories1.create_refunding_reservation(
           id,
-          refundPolicy.refundAmount,
+          Utils.calculateTotalPrice(selectedReservation?.rooms),
           accountHolderName,
           accountNumber,
           bankName
@@ -515,7 +514,9 @@ const BookingHistory = () => {
                           <Col md={6}>
                             <p>
                               <strong>Total price:</strong>{" "}
-                              {Utils.formatCurrency(calculateTotalPrice(reservation.rooms))}
+                              {Utils.formatCurrency(
+                                calculateTotalPrice(reservation.rooms)
+                              )}
                             </p>
                           </Col>
                           <Col md={6}>
@@ -693,6 +694,7 @@ const BookingHistory = () => {
       <ToastProvider />
       <CancelReservationModal
         selectedReservation={selectedReservation}
+        refundAmount={Utils.calculateTotalPrice(selectedReservation?.rooms) ?? 0}
         show={showModal}
         onHide={() => setShowModal(false)}
         onConfirm={() => {
