@@ -194,7 +194,7 @@ const CreateFeedback = () => {
           setIsSubmitting(false);
           showToast.success("Create feedback successfully");
 
-          // Cập nhật trạng thái thành COMPLETED
+          // Cập nhật trạng thái thành COMPLETED sau khi tạo mới feedback
           if (reservationId) {
             dispatch({
               type: ReservationActions.UPDATE_RESERVATIONS,
