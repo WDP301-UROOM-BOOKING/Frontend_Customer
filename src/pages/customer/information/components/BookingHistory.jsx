@@ -515,7 +515,9 @@ const BookingHistory = () => {
                             <p>
                               <strong>Total price:</strong>{" "}
                               {Utils.formatCurrency(
-                                calculateTotalPrice(reservation.rooms)
+                                parseCurrency(
+                                  reservation.totalPrice
+                                )
                               )}
                             </p>
                           </Col>

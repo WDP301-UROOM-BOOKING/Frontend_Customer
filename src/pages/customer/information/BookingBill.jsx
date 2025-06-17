@@ -170,7 +170,43 @@ const BookingBill = () => {
     }
   };
 
-  // Export bill as PDF with proper Vietnamese support
+  // Calculate total price from rooms and services
+  const calculateTotalPrice = (rooms, services = [], checkInDate, checkOutDate) => {
+    // Calculate number of nights
+    const calculateNights = (checkIn, checkOut) => {
+      if (!checkIn || !checkOut) return 1;
+      const checkInDate = new Date(checkIn);
+      const checkOutDate = new Date(checkOut);
+      const timeDiff = checkOutDate.getTime() - checkInDate.getTime();
+      const nights = Math.ceil(timeDiff / (1000 * 3600 * 24));
+      return nights > 0 ? nights : 1;
+    };
+
+    const nights = calculateNights(checkInDate, checkOutDate);
+
+    const roomsTotal = rooms && Array.isArray(rooms) 
+      ? rooms.reduce((total, roomItem) => {
+          const roomPrice = roomItem.room?.price || 0;
+          const quantity = roomItem.quantity || 1;
+          // Room price = price per night × quantity × number of nights
+          return total + roomPrice * quantity * nights;
+        }, 0)
+      : 0;
+
+    const servicesTotal = services && Array.isArray(services)
+      ? services.reduce((total, serviceItem) => {
+          const servicePrice = serviceItem.service?.price || 0;
+          const quantity = serviceItem.quantity || 1;
+          const daysCount = serviceItem.selectDate?.length || 1;
+          // Service price = price × quantity × selected days
+          return total + servicePrice * quantity * daysCount;
+        }, 0)
+      : 0;
+
+    return roomsTotal + servicesTotal;
+  };
+
+  // Export bill as PDF with services included
   const exportBillAsPDF = () => {
     if (!termsAccepted) {
       showToast.warning("Please agree to the Terms & Privacy before exporting");
@@ -185,6 +221,40 @@ const BookingBill = () => {
     setExportLoading(true);
 
     try {
+      // Calculate nights for PDF
+      const calculateNights = (checkIn, checkOut) => {
+        if (!checkIn || !checkOut) return 1;
+        const checkInDate = new Date(checkIn);
+        const checkOutDate = new Date(checkOut);
+        const timeDiff = checkOutDate.getTime() - checkInDate.getTime();
+        const nights = Math.ceil(timeDiff / (1000 * 3600 * 24));
+        return nights > 0 ? nights : 1;
+      };
+
+      const nights = calculateNights(reservationDetail.checkInDate, reservationDetail.checkOutDate);
+
+      // Prepare rooms data for PDF
+      const roomsData = reservationDetail.rooms?.map((roomItem, index) => [
+        (index + 1).toString(),
+        `${roomItem.room?.name || "Phòng"} (${formatCurrency(roomItem.room?.price || 0)} × ${roomItem.quantity} × ${nights} nights)`,
+        `${roomItem.quantity || 1} × ${nights} nights`,
+        formatCurrency((roomItem.room?.price || 0) * (roomItem.quantity || 1) * nights),
+      ]) || [];
+
+      // Prepare services data for PDF
+      const servicesData = reservationDetail.services?.map((serviceItem, index) => [
+        (roomsData.length + index + 1).toString(),
+        `${serviceItem.service?.name || "Dịch vụ"} (${formatCurrency(serviceItem.service?.price || 0)} × ${serviceItem.quantity / serviceItem.selectDate?.length || 1} × ${serviceItem.selectDate?.length || 1} days)`,
+        `${serviceItem.quantity / serviceItem.selectDate?.length || 1} × ${serviceItem.selectDate?.length || 1} days`,
+        formatCurrency(
+          (serviceItem.service?.price || 0) * 
+          (serviceItem.quantity || 1)
+        ),
+      ]) || [];
+
+      // Combine rooms and services data
+      const allItemsData = [...roomsData, ...servicesData];
+
       // Document definition
       const docDefinition = {
         content: [
@@ -269,20 +339,21 @@ const BookingBill = () => {
             table: {
               widths: ["10%", "40%", "20%", "30%"],
               body: [
-                ["STT", "Room name", "Quantity", "Price"],
-                ...reservationDetail.rooms.map((roomItem, index) => [
-                  (index + 1).toString(),
-                  roomItem.room?.name || "Phòng",
-                  roomItem.quantity || 1,
-                  formatCurrency(roomItem.room?.price * roomItem.quantity || 0),
-                ]),
+                ["STT", "Rooms and Services", "Quantity", "Price"],
+                ...allItemsData,
                 [
                   "",
                   "",
                   "Total amount",
                   formatCurrency(
                     reservationDetail.totalAmount ||
-                      calculateTotalPrice(reservationDetail.rooms)
+                      reservationDetail.totalPrice ||
+                      calculateTotalPrice(
+                        reservationDetail.rooms, 
+                        reservationDetail.services,
+                        reservationDetail.checkInDate,
+                        reservationDetail.checkOutDate
+                      )
                   ),
                 ],
               ],
@@ -403,16 +474,6 @@ const BookingBill = () => {
     }
   };
 
-  // Calculate total price from rooms
-  const calculateTotalPrice = (rooms) => {
-    if (!rooms || !Array.isArray(rooms)) return 0;
-    return rooms.reduce((total, roomItem) => {
-      const roomPrice = roomItem.room?.price || 0;
-      const quantity = roomItem.quantity || 1;
-      return total + roomPrice * quantity;
-    }, 0);
-  };
-
   return (
     <div
       className="d-flex flex-column min-vh-100"
@@ -479,12 +540,7 @@ const BookingBill = () => {
                     src={
                       hotelDetail?.images?.[0] ||
                       reservationDetail.hotel?.images?.[0] ||
-                      "https://cf.bstatic.com/xdata/images/hotel/max1024x768/647144068.jpg?k=acaba5abb30178b9f1c312eb53c94e59996dd9e624bb1835646a2a427cf87f0a&o=&hp=1" ||
-                      "/placeholder.svg" ||
-                      "/placeholder.svg" ||
-                      "/placeholder.svg" ||
-                      "/placeholder.svg" ||
-                      "/placeholder.svg"
+                      "https://cf.bstatic.com/xdata/images/hotel/max1024x768/647144068.jpg?k=acaba5abb30178b9f1c312eb53c94e59996dd9e624bb1835646a2a427cf87f0a&o=&hp=1"
                     }
                     alt="Hotel Room"
                     style={{
@@ -545,7 +601,6 @@ const BookingBill = () => {
                   </div>
 
                   {/* Customer Information */}
-
                   <div className="info-section">
                     <Row className="mb-2">
                       <Col md={12} className="info-label">
@@ -578,14 +633,13 @@ const BookingBill = () => {
                     </Row>
                   </div>
 
+                  {/* Hotel Information */}
                   <div className="info-section">
                     <Row className="mb-2">
                       <Col md={12} className="info-label">
                         <h5>II. HOTEL INFORMATION</h5>
                       </Col>
                     </Row>
-                    <Row className="mb-2"></Row>
-                    {/* Update the hotel contact information display section */}
                     <Row className="mb-2">
                       <Col md={3} className="info-label">
                         Phone number:
@@ -621,56 +675,131 @@ const BookingBill = () => {
                     )}
                   </div>
 
+                  {/* Booking Information */}
                   <div className="info-section">
                     <Row className="mb-2">
                       <Col md={12} className="info-label">
                         <h5>III. BOOKING INFORMATION</h5>
                       </Col>
                     </Row>
-                    <Table bordered className="booking-table">
+                    <Table bordered>
                       <thead>
                         <tr>
                           <th>STT</th>
-                          <th>Room name</th>
+                          <th>Rooms and Services</th>
                           <th>Quantity</th>
                           <th>Price</th>
                         </tr>
                       </thead>
                       <tbody>
+                        {/* Rooms */}
                         {reservationDetail.rooms &&
                         Array.isArray(reservationDetail.rooms) ? (
-                          reservationDetail.rooms.map((roomItem, index) => (
-                            <tr key={index}>
-                              <td>{index + 1}</td>
-                              <td>{roomItem.room?.name || "Phòng"}</td>
-                              <td>{roomItem.quantity || 1}</td>
+                          reservationDetail.rooms.map((roomItem, index) => {
+                            const nights = (() => {
+                              if (!reservationDetail.checkInDate || !reservationDetail.checkOutDate) return 1;
+                              const checkInDate = new Date(reservationDetail.checkInDate);
+                              const checkOutDate = new Date(reservationDetail.checkOutDate);
+                              const timeDiff = checkOutDate.getTime() - checkInDate.getTime();
+                              const nights = Math.ceil(timeDiff / (1000 * 3600 * 24));
+                              return nights > 0 ? nights : 1;
+                            })();
+
+                            return (
+                              <tr key={`room-${index}`}>
+                                <td>{index + 1}</td>
+                                <td>
+                                  <strong>Room:</strong> {roomItem.room?.name || "Phòng"}
+                                  <br />
+                                  <small className="text-muted">
+                                    {formatCurrency(roomItem.room?.price || 0)} × {roomItem.quantity} room × {nights} nights
+                                  </small>
+                                </td>
+                                <td>
+                                  {roomItem.quantity || 1}
+                                  <br />
+                                  <small className="text-muted">
+                                    × {nights} nights
+                                  </small>
+                                </td>
+                                <td>
+                                  {formatCurrency(
+                                    (roomItem.room?.price || 0) * (roomItem.quantity || 1) * nights
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })
+                        ) : null}
+                        
+                        {/* Services */}
+                        {reservationDetail.services &&
+                        Array.isArray(reservationDetail.services) &&
+                        reservationDetail.services.length > 0 ? (
+                          reservationDetail.services.map((serviceItem, index) => (
+                            <tr key={`service-${index}`}>
+                              <td>{(reservationDetail.rooms?.length || 0) + index + 1}</td>
+                              <td>
+                                <strong>Service:</strong> {serviceItem.service?.name || "Dịch vụ"}
+                                <br />
+                                <small className="text-muted">
+                                  Dates: {serviceItem.selectDate?.map(date => 
+                                    formatDate(date)
+                                  ).join(", ") || "N/A"}
+                                </small>
+                              </td>
+                              <td>
+                                {serviceItem.quantity / serviceItem.selectDate?.length || 1}
+                                <br />
+                                <small className="text-muted">
+                                  x {serviceItem.selectDate?.length || 1} days
+                                </small>
+                              </td>
                               <td>
                                 {formatCurrency(
-                                  roomItem.room?.price * roomItem.quantity || 0
+                                  (serviceItem.service?.price || 0) * 
+                                  (serviceItem.quantity || 1) 
                                 )}
                               </td>
                             </tr>
                           ))
-                        ) : (
+                        ) : null}
+
+                        {/* Show message if no rooms or services */}
+                        {(!reservationDetail.rooms || reservationDetail.rooms.length === 0) &&
+                         (!reservationDetail.services || reservationDetail.services.length === 0) && (
                           <tr>
                             <td colSpan={4} className="text-center">
-                              No room information available
+                              No booking information available
                             </td>
                           </tr>
                         )}
+
+                        {/* Total Row */}
                         <tr className="total-row">
-                          <td colSpan={2}>Total amount</td>
                           <td colSpan={2}>
-                            {formatCurrency(
-                              reservationDetail.totalAmount ||
-                                calculateTotalPrice(reservationDetail.rooms)
-                            )}
+                            <strong>Total amount</strong>
+                          </td>
+                          <td colSpan={2}>
+                            <strong>
+                              {formatCurrency(
+                                reservationDetail.totalAmount ||
+                                reservationDetail.totalPrice ||
+                                calculateTotalPrice(
+                                  reservationDetail.rooms, 
+                                  reservationDetail.services,
+                                  reservationDetail.checkInDate,
+                                  reservationDetail.checkOutDate
+                                )
+                              )}
+                            </strong>
                           </td>
                         </tr>
                       </tbody>
                     </Table>
                   </div>
 
+                  {/* Customer Signature */}
                   <div className="info-section">
                     <h5>IV. CUSTOMER SIGNATURE</h5>
                     <Form.Check
