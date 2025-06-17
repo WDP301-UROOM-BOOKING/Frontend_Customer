@@ -233,7 +233,6 @@ const CreateFeedback = () => {
       fetchReservationDetail(reservationId);
     }
   }, [reservationId]);
-
   useEffect(() => {
     if (Auth && Auth._id) {
       if (reservationId) {
