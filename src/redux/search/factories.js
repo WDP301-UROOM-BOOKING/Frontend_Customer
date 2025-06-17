@@ -51,6 +51,10 @@ const Factories = {
     return api.post(ApiConstants.CREATE_BOOKING, {params});
   },
 
+  checkout_booking: (reservationId) => {
+    return api.post(ApiConstants.CHECKOUT_BOOKING, {reservationId});
+  },
+
   cancel_payment: (reservationId) => {
     return api.post(ApiConstants.CANCEL_PAYMENT, {reservationId});
   },

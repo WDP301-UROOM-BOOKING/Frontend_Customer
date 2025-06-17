@@ -140,7 +140,7 @@ export default function HotelDetailPage() {
   const [checkoutDate, setCheckoutDate] = useState(SearchInformation.checkoutDate);
   const [selectedAdults, setSelectedAdults] = useState(
     adultsOptions.find((option) => option.value === SearchInformation.adults) ||
-      adultsOptions[0]
+    adultsOptions[0]
   );
   const [selectedChildren, setSelectedChildren] = useState(
     childrenOptions.find(
@@ -160,6 +160,7 @@ export default function HotelDetailPage() {
 
   // Add event listener for popstate at the top level
   useEffect(() => {
+    console.log('hotelDetail?.services >> ', hotelDetail?.services);
     const handlePopState = () => {
       handleBackToBooking();
     };
@@ -174,12 +175,12 @@ export default function HotelDetailPage() {
   const handleBackToBooking = () => {
     // Get the stack
     const bookingStack = JSON.parse(sessionStorage.getItem('bookingStack') || '[]');
-    
+
     // If stack is not empty, pop the last item
     if (bookingStack.length > 0) {
       const lastBooking = bookingStack.pop();
       sessionStorage.setItem('bookingStack', JSON.stringify(bookingStack));
-      
+
       // Update Redux store
       dispatch({
         type: SearchActions.SAVE_SELECTED_ROOMS,
@@ -193,7 +194,7 @@ export default function HotelDetailPage() {
         },
       });
     }
-    
+
     navigate(Routers.BookingCheckPage);
   };
 
@@ -306,7 +307,7 @@ export default function HotelDetailPage() {
   const handleSearchRoom = () => {
     const adults = selectedAdults ? selectedAdults.value : 1;
     const childrens = selectedChildren ? selectedChildren.value : 0;
-    
+
     // Update search information with new dates
     const SearchInformationTemp = {
       address: SearchInformation.address,
@@ -325,7 +326,7 @@ export default function HotelDetailPage() {
     // Reset selected rooms and services
     dispatch({
       type: SearchActions.SAVE_SELECTED_ROOMS,
-      payload: { 
+      payload: {
         selectedRooms: [],
         selectedServices: [],
         hotelDetail: hotelDetail
@@ -509,7 +510,7 @@ export default function HotelDetailPage() {
         payload: {
           hotelId,
           onSuccess: () => setIsFavorite(false),
-          onFailed: (msg) => {},
+          onFailed: (msg) => { },
           onError: (error) => console.error(error),
         },
       });
@@ -519,7 +520,7 @@ export default function HotelDetailPage() {
         payload: {
           hotelId,
           onSuccess: () => setIsFavorite(true),
-          onFailed: (msg) => {},
+          onFailed: (msg) => { },
           onError: (error) => console.error(error),
         },
       });
@@ -611,11 +612,11 @@ export default function HotelDetailPage() {
     if (selectedRoomsTemps && selectedRoomsTemps.length > 0) {
       setSelectedRooms(selectedRoomsTemps);
     }
-    
+
     // Restore selected services from Redux
     if (selectedServicesFromRedux && selectedServicesFromRedux.length > 0) {
       setSelectedServices(selectedServicesFromRedux);
-      
+
       // Restore service quantities and dates
       const quantities = {};
       const dates = {};
@@ -661,7 +662,7 @@ export default function HotelDetailPage() {
   // Add this function to handle service quantity changes
   const handleServiceQuantityChange = (service, amount) => {
     if (amount < 1) return;
-    
+
     setServiceQuantities((prev) => ({
       ...prev,
       [service._id]: amount
@@ -685,7 +686,7 @@ export default function HotelDetailPage() {
     setServiceSelectedDates((prev) => {
       const currentDates = prev[service._id] || [];
       const dateStr = date.toISOString();
-      
+
       if (currentDates.includes(dateStr)) {
         return {
           ...prev,
@@ -909,7 +910,7 @@ export default function HotelDetailPage() {
             }}
             variant="outline-light"
             onClick={() => {
-              if(Auth._id != -1){
+              if (Auth._id != -1) {
                 navigate(Routers.ChatPage, {
                   state: {
                     receiver: {
@@ -918,7 +919,7 @@ export default function HotelDetailPage() {
                     },
                   },
                 });
-              }else{
+              } else {
                 navigate(Routers.LoginPage);
               }
             }}
@@ -985,9 +986,8 @@ export default function HotelDetailPage() {
                           key={actualIndex}
                           src={image || "/placeholder.svg"}
                           alt={`Room ${actualIndex + 1}`}
-                          className={`thumbnail ${
-                            mainImage === image ? "active" : ""
-                          }`}
+                          className={`thumbnail ${mainImage === image ? "active" : ""
+                            }`}
                           onClick={() =>
                             handleThumbnailClick(image, actualIndex)
                           }
@@ -1027,7 +1027,7 @@ export default function HotelDetailPage() {
                       setShowModalMap(true);
                     }}
                     className="text-primary"
-                    style={{ cursor: "pointer", fontSize: "14px", fontWeight: '500'}}
+                    style={{ cursor: "pointer", fontSize: "14px", fontWeight: '500' }}
                   >
                     Show on map
                   </a>
@@ -1516,12 +1516,12 @@ export default function HotelDetailPage() {
             </div>
 
             <Row className="mt-4 mb-4">
-            <h3
-          className="text-center text-uppercase fw-bold mb-5"
-          style={{ color: "#1a2b49", fontSize: "2.5rem" }}
-        >
-          Services
-        </h3>
+              <h3
+                className="text-center text-uppercase fw-bold mb-5"
+                style={{ color: "#1a2b49", fontSize: "2.5rem" }}
+              >
+                Services
+              </h3>
               <Col>
                 <Card className="p-4">
                   <div className="services-container mt-4">
@@ -1531,13 +1531,12 @@ export default function HotelDetailPage() {
                         const isSelected = selectedServices.some((s) => s._id === service._id);
                         const quantity = serviceQuantities[service._id] || 1;
                         const selectedDates = serviceSelectedDates[service._id] || [];
-                        
+
                         return (
                           <div key={service._id} className="col-md-4 mb-3">
                             <div
-                              className={`service-card p-3 ${
-                                isSelected ? "selected" : ""
-                              }`}
+                              className={`service-card p-3 ${isSelected ? "selected" : ""
+                                }`}
                               style={{
                                 border: "1px solid #ddd",
                                 borderRadius: "8px",
@@ -1590,7 +1589,7 @@ export default function HotelDetailPage() {
                               )}
                               {isSelected && selectedDates.length > 0 && (
                                 <div className="mt-2 small text-muted">
-                                  Selected dates: {selectedDates.map(date => 
+                                  Selected dates: {selectedDates.map(date =>
                                     new Date(date).toLocaleDateString()
                                   ).join(', ')}
                                 </div>
@@ -1900,16 +1899,16 @@ export default function HotelDetailPage() {
                     {averageRating === 5
                       ? "Excellent"
                       : averageRating > 4
-                      ? "Good"
-                      : averageRating > 3
-                      ? "Average"
-                      : averageRating > 2
-                      ? "Poor"
-                      : averageRating > 1
-                      ? "Very Poor"
-                      : averageRating == 0
-                      ? "No Average"
-                      : ""}
+                        ? "Good"
+                        : averageRating > 3
+                          ? "Average"
+                          : averageRating > 2
+                            ? "Poor"
+                            : averageRating > 1
+                              ? "Very Poor"
+                              : averageRating == 0
+                                ? "No Average"
+                                : ""}
                   </h2>
 
                   <p
@@ -2270,9 +2269,8 @@ export default function HotelDetailPage() {
                   return (
                     <div
                       key={dateStr}
-                      className={`date-option p-2 border rounded ${
-                        isSelected ? "bg-primary text-white" : ""
-                      }`}
+                      className={`date-option p-2 border rounded ${isSelected ? "bg-primary text-white" : ""
+                        }`}
                       style={{ cursor: "pointer" }}
                       onClick={() => handleDateSelection(currentService, date)}
                     >

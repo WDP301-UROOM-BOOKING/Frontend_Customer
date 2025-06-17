@@ -141,32 +141,71 @@ const BookingCheckPage = () => {
       }))
     }
 
+    console.log('params >> ', params)
+
+    // try {
+    //   const response = await Factories.create_booking(params);
+    //   if (response?.status === 201) {
+    //     const reservation= response?.data.reservation
+    //     console.log("reservation: ", reservation)
+    //     navigate(Routers.PaymentPage,
+    //       {
+    //         state: {
+    //           createdAt: reservation.createdAt,
+    //           totalPrice: totalPrice,
+    //           idReservation: reservation._id,
+    //           messageSuccess: response?.data.message
+    //         }
+    //       }
+    //     )
+    //   }else{
+    //     console.log("unpaidReservation: ", response?.data.unpaidReservation)
+    //     navigate(Routers.PaymentPage,
+    //       {
+    //         state: {
+    //           createdAt: response?.data.unpaidReservation.createdAt,
+    //           totalPrice: response?.data.unpaidReservation.totalPrice,
+    //           idReservation: response?.data.unpaidReservation._id,
+    //           messageError: response?.data.message
+    //         }
+    //       }
+    //     )
+    //   }
+    // } catch (error) {
+    //   console.error("Error create payment: ", error);
+    //   navigate(Routers.ErrorPage,)
+    // } finally {
+    // }
+
+    // Thinh update create booking and checkout START 13/06/2025
     try {
       const response = await Factories.create_booking(params);
+      console.log("response >> ", response )
+      if (response?.status === 200) {
+        console.log("response >> ", response )
+        const unpaidReservationId = response?.data?.unpaidReservation?._id;
+        const responseCheckout = await Factories.checkout_booking(unpaidReservationId);
+        const paymentUrl = responseCheckout?.data?.sessionUrl;
+        if (paymentUrl) {
+          window.location.href = paymentUrl;
+        }
+      }
       if (response?.status === 201) {
-        const reservation = response?.data.reservation;
-        navigate(Routers.PaymentPage, {
-          state: {
-            createdAt: reservation.createdAt,
-            totalPrice: totalPrice,
-            idReservation: reservation._id,
-            messageSuccess: response?.data.message
-          }
-        });
+        console.log("response >> ", response )
+        const reservationId = response?.data?.reservation?._id;
+        const responseCheckout = await Factories.checkout_booking(reservationId);
+        const paymentUrl = responseCheckout?.data?.sessionUrl;
+        if (paymentUrl) {
+          window.location.href = paymentUrl;
+        }
       } else {
-        navigate(Routers.PaymentPage, {
-          state: {
-            createdAt: response?.data.unpaidReservation.createdAt,
-            totalPrice: response?.data.unpaidReservation.totalPrice,
-            idReservation: response?.data.unpaidReservation._id,
-            messageError: response?.data.message
-          }
-        });
+        console.log("error create booking")
       }
     } catch (error) {
       console.error("Error create payment: ", error);
-      navigate(Routers.ErrorPage);
+      navigate(Routers.ErrorPage)
     }
+    // Thinh update create booking and checkout END 13/06/2025
   };
 
   const handleAccept = () => {
@@ -180,10 +219,10 @@ const BookingCheckPage = () => {
   const formatCurrency = (amount) => {
     if (amount === undefined || amount === null) return "$0";
     return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
+      style: "currency",
+      currency: "USD",
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
     }).format(amount);
   };
 
@@ -531,7 +570,7 @@ const BookingCheckPage = () => {
           </Row>
         </Container>
         <div>
-          <ChatBox/>
+          <ChatBox />
         </div>
       </div>
       <Footer />
