@@ -4,11 +4,11 @@ import createSagaMiddleware from 'redux-saga';
 import { persistStore, persistReducer } from 'redux-persist';
 import storage from 'redux-persist/lib/storage';
 
-import rootReducer from './root-reducer';
-import rootSaga from './root-saga';
+import rootReducer from "./root-reducer"
+import rootSaga from "./root-saga"
 
 // Khởi tạo middleware saga
-const sagaMiddleware = createSagaMiddleware();
+const sagaMiddleware = createSagaMiddleware()
 
 // Cấu hình persist KHÔNG dùng expire transform nữa
 const persistConfig = {
@@ -19,25 +19,25 @@ const persistConfig = {
 };
 
 // Gộp persist vào reducer
-const persistedReducer = persistReducer(persistConfig, rootReducer);
+const persistedReducer = persistReducer(persistConfig, rootReducer)
 
 // Tạo store
 const store = configureStore({
   reducer: persistedReducer,
-  middleware: getDefaultMiddleware =>
+  middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: false,
     }).concat(sagaMiddleware),
-});
+})
 
 // Chạy saga
-sagaMiddleware.run(rootSaga);
+sagaMiddleware.run(rootSaga)
 
 // Tạo persistor để dùng trong <PersistGate>
-export const persistor = persistStore(store);
+export const persistor = persistStore(store)
 
-// Custom hooks không type
-export const useAppDispatch = useDispatch;
-export const useAppSelector = useSelector;
+// Custom hooks
+export const useAppDispatch = useDispatch
+export const useAppSelector = useSelector
 
-export default store;
+export default store

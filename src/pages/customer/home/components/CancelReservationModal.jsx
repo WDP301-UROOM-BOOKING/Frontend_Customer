@@ -3,10 +3,12 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import Utils from "../../../../utils/Utils";
 import { Form, Badge, Row, Col } from "react-bootstrap";
 import { useState } from "react";
+import ConfirmationModal from "@components/ConfirmationModal";
 
 // Combined component with inline styles
 function CancelReservationModal({
   selectedReservation,
+  refundAmount,
   show,
   onHide,
   onConfirm,
@@ -17,6 +19,13 @@ function CancelReservationModal({
   setAccountNumber,
   setBankName,
 }) {
+  const [showModal, setShowModal] = useState(show);
+  /*************  ✨ Windsurf Command ⭐  *************/
+  /**
+   * T nh s  s ng cho t i ng y nh n ph ng (check-in)
+   * @returns {number|null} S  s ng cho t i ng y nh n ph ng, ho c null n u d li u kh ng h p l
+   */
+  /*******  9a4d7a03-50c9-49c9-930e-a4c910903924  *******/
   const calculateDaysUntilCheckIn = () => {
     if (!selectedReservation?.checkIn) {
       return null; // hoặc return 0 tùy logic bạn muốn xử lý
@@ -40,11 +49,6 @@ function CancelReservationModal({
 
     return differenceInDays;
   };
-  function parseCurrency(formatted) {
-    if (!formatted) return 0; // hoặc null tùy vào yêu cầu
-    const numericString = formatted.replace(/[^\d]/g, "");
-    return Number(numericString);
-  }
 
   const formatCurrency = (amount) => {
     if (amount === undefined || amount === null) return "$0";
@@ -59,7 +63,7 @@ function CancelReservationModal({
   // Calculate refund policy based on days until check-in
   const calculateRefundPolicy = () => {
     const daysUntilCheckIn = calculateDaysUntilCheckIn();
-    const totalPrice = parseCurrency(selectedReservation?.totalPrice);
+    const totalPrice = refundAmount;
     if (selectedReservation?.status === "PENDING") {
       return {
         refundPercentage: 100,
@@ -212,7 +216,7 @@ function CancelReservationModal({
               </div>
               <div className="detail-row">
                 <span>Total:</span>
-                <span>{selectedReservation?.totalPrice}</span>
+                <span>{Utils.formatCurrency(refundAmount)}</span>
               </div>
 
               <div className="detail-row">
@@ -353,12 +357,21 @@ function CancelReservationModal({
           <Button
             variant="danger"
             className="confirm-button"
-            onClick={onConfirm}
+            onClick={() => setShowModal(true)}
           >
             Confirm Cancellation
           </Button>
         </Modal.Footer>
       </Modal>
+      <ConfirmationModal
+        show={showModal}
+        onHide={() => setShowModal(false)}
+        onConfirm={onConfirm}
+        title="Cancel Reservation Confirmation"
+        message="Are you sure you want to cancel this reservation?"
+        confirmButtonText="Confirm"
+        type="danger"
+      />
     </>
   );
 }
