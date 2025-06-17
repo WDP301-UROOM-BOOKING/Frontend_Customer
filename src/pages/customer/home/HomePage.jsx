@@ -140,7 +140,7 @@ const childrenOptions = Array.from({ length: 11 }, (_, i) => ({
   value: i,
   label: `${i} Childrens`,
 }));
-
+// search component
 export const SearchBar = () => {
   const navigate = useNavigate();
   const hotels = useAppSelector((state) => state.hotel.hotels);

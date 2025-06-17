@@ -229,6 +229,7 @@ const MyFeedback = () => {
   }
 
   // Function to confirm deletion
+  // delete feedback
   const confirmDeleteFeedback = () => {
     dispatch({
       type: FeedbackActions.DELETE_FEEDBACK,
