@@ -2281,3 +2281,4 @@ export default function HotelDetailPage() {
     </div>
   );
 }
+//update test
