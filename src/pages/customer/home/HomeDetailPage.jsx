@@ -1515,95 +1515,96 @@ export default function HotelDetailPage() {
               </div>
             </div>
 
-            <Row className="mt-4 mb-4">
-            <h3
-          className="text-center text-uppercase fw-bold mb-5"
-          style={{ color: "#1a2b49", fontSize: "2.5rem" }}
-        >
-          Services
-        </h3>
-              <Col>
-                <Card className="p-4">
-                  <div className="services-container mt-4">
-                    {/* <h3 className="mb-3">Services</h3> */}
-                    <div className="row">
-                      {hotelDetail?.services?.map((service) => {
-                        const isSelected = selectedServices.some((s) => s._id === service._id);
-                        const quantity = serviceQuantities[service._id] || 1;
-                        const selectedDates = serviceSelectedDates[service._id] || [];
-                        
-                        return (
-                          <div key={service._id} className="col-md-4 mb-3">
-                            <div
-                              className={`service-card p-3 ${
-                                isSelected ? "selected" : ""
-                              }`}
-                              style={{
-                                border: "1px solid #ddd",
-                                borderRadius: "8px",
-                                cursor: "pointer",
-                                transition: "all 0.3s ease",
-                                backgroundColor: isSelected ? "#f8f9fa" : "white",
-                                boxShadow: isSelected ? "0 2px 4px rgba(0,0,0,0.1)" : "none"
-                              }}
-                              onClick={() => handleServiceSelection(service)}
-                            >
-                              <h5>{service.name}</h5>
-                              <p>{service.description}</p>
-                              <p className="text-primary fw-bold">
-                                {Utils.formatCurrency(service.price)}/{service.type}
-                              </p>
-                              {isSelected && (
-                                <div className="d-flex align-items-center justify-content-between mt-2">
-                                  <div className="d-flex align-items-center">
+            {hotelDetail?.services && hotelDetail.services.length > 0 && (
+              <Row className="mt-4 mb-4">
+                <h3
+                  className="text-center text-uppercase fw-bold mb-5"
+                  style={{ color: "#1a2b49", fontSize: "2.5rem" }}
+                >
+                  Services
+                </h3>
+                <Col>
+                  <Card className="p-4">
+                    <div className="services-container mt-4">
+                      <div className="row">
+                        {hotelDetail.services.map((service) => {
+                          const isSelected = selectedServices.some((s) => s._id === service._id);
+                          const quantity = serviceQuantities[service._id] || 1;
+                          const selectedDates = serviceSelectedDates[service._id] || [];
+                          
+                          return (
+                            <div key={service._id} className="col-md-4 mb-3">
+                              <div
+                                className={`service-card p-3 ${
+                                  isSelected ? "selected" : ""
+                                }`}
+                                style={{
+                                  border: "1px solid #ddd",
+                                  borderRadius: "8px",
+                                  cursor: "pointer",
+                                  transition: "all 0.3s ease",
+                                  backgroundColor: isSelected ? "#f8f9fa" : "white",
+                                  boxShadow: isSelected ? "0 2px 4px rgba(0,0,0,0.1)" : "none"
+                                }}
+                                onClick={() => handleServiceSelection(service)}
+                              >
+                                <h5>{service.name}</h5>
+                                <p>{service.description}</p>
+                                <p className="text-primary fw-bold">
+                                  {Utils.formatCurrency(service.price)}/{service.type}
+                                </p>
+                                {isSelected && (
+                                  <div className="d-flex align-items-center justify-content-between mt-2">
+                                    <div className="d-flex align-items-center">
+                                      <button
+                                        className="btn btn-sm btn-outline-primary"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleServiceQuantityChange(service, quantity - 1);
+                                        }}
+                                        disabled={quantity <= 1}
+                                      >
+                                        -
+                                      </button>
+                                      <span className="mx-2">{quantity}</span>
+                                      <button
+                                        className="btn btn-sm btn-outline-primary"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleServiceQuantityChange(service, quantity + 1);
+                                        }}
+                                      >
+                                        +
+                                      </button>
+                                    </div>
                                     <button
-                                      className="btn btn-sm btn-outline-primary"
+                                      className="btn btn-sm btn-outline-secondary"
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        handleServiceQuantityChange(service, quantity - 1);
-                                      }}
-                                      disabled={quantity <= 1}
-                                    >
-                                      -
-                                    </button>
-                                    <span className="mx-2">{quantity}</span>
-                                    <button
-                                      className="btn btn-sm btn-outline-primary"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleServiceQuantityChange(service, quantity + 1);
+                                        handleShowDateSelector(service);
                                       }}
                                     >
-                                      +
+                                      Select Date
                                     </button>
                                   </div>
-                                  <button
-                                    className="btn btn-sm btn-outline-secondary"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleShowDateSelector(service);
-                                    }}
-                                  >
-                                    Select Date
-                                  </button>
-                                </div>
-                              )}
-                              {isSelected && selectedDates.length > 0 && (
-                                <div className="mt-2 small text-muted">
-                                  Selected dates: {selectedDates.map(date => 
-                                    new Date(date).toLocaleDateString()
-                                  ).join(', ')}
-                                </div>
-                              )}
+                                )}
+                                {isSelected && selectedDates.length > 0 && (
+                                  <div className="mt-2 small text-muted">
+                                    Selected dates: {selectedDates.map(date => 
+                                      new Date(date).toLocaleDateString()
+                                    ).join(', ')}
+                                  </div>
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        );
-                      })}
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
-                </Card>
-              </Col>
-            </Row>
+                  </Card>
+                </Col>
+              </Row>
+            )}
 
             <div className="text-center mt-5">
               <Button
