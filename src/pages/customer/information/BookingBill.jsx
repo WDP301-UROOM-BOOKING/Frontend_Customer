@@ -141,7 +141,7 @@ const BookingBill = () => {
       },
     });
   };
-
+// lấy thông tin chi tiết khách sạn
   const fetchHotelDetails = (hotelId) => {
     console.log("Fetching hotel details for hotel ID:", hotelId);
 
