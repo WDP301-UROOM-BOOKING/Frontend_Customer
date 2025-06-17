@@ -3,7 +3,6 @@ import { useDispatch, useSelector } from 'react-redux';
 import createSagaMiddleware from 'redux-saga';
 import { persistStore, persistReducer } from 'redux-persist';
 import storage from 'redux-persist/lib/storage';
-import expireReducer from 'redux-persist-transform-expire';
 
 import rootReducer from './root-reducer';
 import rootSaga from './root-saga';
@@ -11,25 +10,12 @@ import rootSaga from './root-saga';
 // Khởi tạo middleware saga
 const sagaMiddleware = createSagaMiddleware();
 
-// Cấu hình expire cho các reducer có thời gian hết hạn
-const expireConfig = {
-  expireKey: 'expireAt',
-  expireSeconds: 60*60*1, // 1 ngày
-  autoExpire: true,
-};
-
-// Cấu hình persist tổng
+// Cấu hình persist KHÔNG dùng expire transform nữa
 const persistConfig = {
-  key: 'root',
+  key: "root",
   storage,
-  whitelist: ['Auth', 'Search', 'hotel', 'Room', 'ChatBox', 'Socket'], // auth vĩnh viễn, booking sẽ expire
-  transforms: [
-    expireReducer('Search', expireConfig),
-    expireReducer('hotel', expireConfig),
-    expireReducer('Room', expireConfig),
-    expireReducer('ChatBox', expireConfig),
-    expireReducer('Socket', expireConfig),
-  ],
+  whitelist: ["Auth", "Search", "hotel", "Room", "ChatBox", "Socket"],
+  // Bỏ transforms vì chúng ta sẽ tự handle expire
 };
 
 // Gộp persist vào reducer

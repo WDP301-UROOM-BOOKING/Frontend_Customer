@@ -279,20 +279,14 @@ export default function HotelDetailPage() {
             if (isMounted) {
               if (Array.isArray(roomList)) {
                 setRooms(roomList);
-              } else {
-                console.warn("Unexpected data format received:", roomList);
               }
             }
           },
           onFailed: (msg) => {
-            if (isMounted) {
-              console.error("Failed to fetch rooms:", msg);
-            }
+            // Remove console.error
           },
           onError: (err) => {
-            if (isMounted) {
-              console.error("Server error:", err);
-            }
+            // Remove console.error
           },
         },
       });
@@ -357,12 +351,14 @@ export default function HotelDetailPage() {
             setTimeout(() => {
               setSearchRoom(false);
             }, 1000);
-          } else {
-            console.warn("Unexpected data format received:", roomList);
           }
         },
-        onFailed: (msg) => console.error("Failed to fetch rooms:", msg),
-        onError: (err) => console.error("Server error:", err),
+        onFailed: (msg) => {
+          // Remove console.error
+        },
+        onError: (err) => {
+          // Remove console.error
+        },
       },
     });
   };
@@ -423,14 +419,10 @@ export default function HotelDetailPage() {
                     }
                   },
                   onFailed: (msg) => {
-                    if (isMounted) {
-                      console.error("Failed to fetch rooms:", msg);
-                    }
+                    // Remove console.error
                   },
                   onError: (err) => {
-                    if (isMounted) {
-                      console.error("Server error:", err);
-                    }
+                    // Remove console.error
                   },
                 },
               });
@@ -438,9 +430,7 @@ export default function HotelDetailPage() {
           });
         }
       } catch (error) {
-        if (isMounted) {
-          console.error("Error fetching hotels:", error);
-        }
+        // Remove console.error
       }
     };
 
@@ -466,8 +456,7 @@ export default function HotelDetailPage() {
         setCurrentPage(response?.data.currentPage);
       }
     } catch (error) {
-      console.error("Error fetching hotels:", error);
-    } finally {
+      // Remove console.error
     }
   };
 
@@ -489,9 +478,7 @@ export default function HotelDetailPage() {
           setCurrentPage(response?.data.currentPage);
         }
       } catch (error) {
-        if (isMounted) {
-          console.error("Error fetching feedbacks:", error);
-        }
+        // Remove console.error
       }
     };
 
@@ -579,8 +566,7 @@ export default function HotelDetailPage() {
         fetchFeedbacks();
       }
     } catch (error) {
-      console.error("Error fetching hotels:", error);
-    } finally {
+      // Remove console.error
     }
   };
 
@@ -591,8 +577,7 @@ export default function HotelDetailPage() {
         fetchFeedbacks();
       }
     } catch (error) {
-      console.error("Error fetching hotels:", error);
-    } finally {
+      // Remove console.error
     }
   };
 
@@ -777,7 +762,7 @@ export default function HotelDetailPage() {
             Please wait while we prepare the best offers for you
           </p>
         </div>
-        <style jsx>{`
+        <style>{`
           @keyframes spin {
             0% {
               transform: rotate(0deg);
@@ -1516,93 +1501,96 @@ export default function HotelDetailPage() {
             </div>
 
             <Row className="mt-4 mb-4">
-            <h3
-          className="text-center text-uppercase fw-bold mb-5"
-          style={{ color: "#1a2b49", fontSize: "2.5rem" }}
-        >
-          Services
-        </h3>
-              <Col>
-                <Card className="p-4">
-                  <div className="services-container mt-4">
-                    {/* <h3 className="mb-3">Services</h3> */}
-                    <div className="row">
-                      {hotelDetail?.services?.map((service) => {
-                        const isSelected = selectedServices.some((s) => s._id === service._id);
-                        const quantity = serviceQuantities[service._id] || 1;
-                        const selectedDates = serviceSelectedDates[service._id] || [];
-                        
-                        return (
-                          <div key={service._id} className="col-md-4 mb-3">
-                            <div
-                              className={`service-card p-3 ${
-                                isSelected ? "selected" : ""
-                              }`}
-                              style={{
-                                border: "1px solid #ddd",
-                                borderRadius: "8px",
-                                cursor: "pointer",
-                                transition: "all 0.3s ease",
-                                backgroundColor: isSelected ? "#f8f9fa" : "white",
-                                boxShadow: isSelected ? "0 2px 4px rgba(0,0,0,0.1)" : "none"
-                              }}
-                              onClick={() => handleServiceSelection(service)}
-                            >
-                              <h5>{service.name}</h5>
-                              <p>{service.description}</p>
-                              <p className="text-primary fw-bold">
-                                {Utils.formatCurrency(service.price)}/{service.type}
-                              </p>
-                              {isSelected && (
-                                <div className="d-flex align-items-center justify-content-between mt-2">
-                                  <div className="d-flex align-items-center">
-                                    <button
-                                      className="btn btn-sm btn-outline-primary"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleServiceQuantityChange(service, quantity - 1);
-                                      }}
-                                      disabled={quantity <= 1}
-                                    >
-                                      -
-                                    </button>
-                                    <span className="mx-2">{quantity}</span>
-                                    <button
-                                      className="btn btn-sm btn-outline-primary"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleServiceQuantityChange(service, quantity + 1);
-                                      }}
-                                    >
-                                      +
-                                    </button>
-                                  </div>
-                                  <button
-                                    className="btn btn-sm btn-outline-secondary"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleShowDateSelector(service);
-                                    }}
-                                  >
-                                    Select Date
-                                  </button>
+              {hotelDetail?.services?.length > 0 && (
+                <>
+                  <h3
+                    className="text-center text-uppercase fw-bold mb-5"
+                    style={{ color: "#1a2b49", fontSize: "2.5rem" }}
+                  >
+                    Services
+                  </h3>
+                  <Col>
+                    <Card className="p-4">
+                      <div className="services-container mt-4">
+                        <div className="row">
+                          {hotelDetail?.services?.map((service) => {
+                            const isSelected = selectedServices.some((s) => s._id === service._id);
+                            const quantity = serviceQuantities[service._id] || 1;
+                            const selectedDates = serviceSelectedDates[service._id] || [];
+                            
+                            return (
+                              <div key={service._id} className="col-md-4 mb-3">
+                                <div
+                                  className={`service-card p-3 ${
+                                    isSelected ? "selected" : ""
+                                  }`}
+                                  style={{
+                                    border: "1px solid #ddd",
+                                    borderRadius: "8px",
+                                    cursor: "pointer",
+                                    transition: "all 0.3s ease",
+                                    backgroundColor: isSelected ? "#f8f9fa" : "white",
+                                    boxShadow: isSelected ? "0 2px 4px rgba(0,0,0,0.1)" : "none"
+                                  }}
+                                  onClick={() => handleServiceSelection(service)}
+                                >
+                                  <h5>{service.name}</h5>
+                                  <p>{service.description}</p>
+                                  <p className="text-primary fw-bold">
+                                    {Utils.formatCurrency(service.price)}/{service.type}
+                                  </p>
+                                  {isSelected && (
+                                    <div className="d-flex align-items-center justify-content-between mt-2">
+                                      <div className="d-flex align-items-center">
+                                        <button
+                                          className="btn btn-sm btn-outline-primary"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleServiceQuantityChange(service, quantity - 1);
+                                          }}
+                                          disabled={quantity <= 1}
+                                        >
+                                          -
+                                        </button>
+                                        <span className="mx-2">{quantity}</span>
+                                        <button
+                                          className="btn btn-sm btn-outline-primary"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleServiceQuantityChange(service, quantity + 1);
+                                          }}
+                                        >
+                                          +
+                                        </button>
+                                      </div>
+                                      <button
+                                        className="btn btn-sm btn-outline-secondary"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleShowDateSelector(service);
+                                        }}
+                                      >
+                                        Select Date
+                                      </button>
+                                    </div>
+                                  )}
+                                  {isSelected && selectedDates.length > 0 && (
+                                    <div className="mt-2 small text-muted">
+                                      Selected dates: {selectedDates.map(date => 
+                                        new Date(date).toLocaleDateString()
+                                      ).join(', ')}
+                                    </div>
+                                  )}
                                 </div>
-                              )}
-                              {isSelected && selectedDates.length > 0 && (
-                                <div className="mt-2 small text-muted">
-                                  Selected dates: {selectedDates.map(date => 
-                                    new Date(date).toLocaleDateString()
-                                  ).join(', ')}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </Card>
-              </Col>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </Card>
+                  </Col>
+                </>
+              )}
             </Row>
 
             <div className="text-center mt-5">
