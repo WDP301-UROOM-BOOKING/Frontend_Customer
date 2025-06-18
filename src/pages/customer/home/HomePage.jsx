@@ -25,6 +25,7 @@ import {
   FaArrowRight,
   FaTrash,
 } from "react-icons/fa";
+import { askGemini, getWeatherForCity, extractCity, extractTopHotelRequest, getTopHotels, getTopHotelsFromServer } from "@utils/chatAI";
 import { useEffect, useRef, useState } from "react";
 import NavigationBar from "../Header";
 import Footer from "../Footer";
@@ -1102,7 +1103,7 @@ export const ChatBox = () => {
 
   const sendMessage = () => {
     if (input.trim() !== "") {
-      const userMessage = input.trim().toLowerCase();
+      const userMessage = input.trim();
       setMessages([...messages, { text: input, sender: "user" }]);
       dispatch({
         type: ChatboxActions.ADD_MESSAGE,
@@ -1112,43 +1113,44 @@ export const ChatBox = () => {
       });
       setInput("");
 
-      setTimeout(() => {
-        const matchedQA = qaData.find((qa) =>
-          qa.questions.some((q) =>
-            userMessage.toLowerCase().includes(q.toLowerCase())
-          )
-        );
+      setTimeout(async () => {
+        const topHotelRequest = extractTopHotelRequest(userMessage);
+        if (topHotelRequest) {
+          const list = getTopHotels(topHotelRequest.city, topHotelRequest.count);
+          if (list.length > 0) {
+            const formatted = list
+              .map((hotel, idx) => `${idx + 1}. ${hotel.name} (${hotel.rating}⭐)`)
+              .join("\n");
 
-        if (matchedQA) {
-          const botReplies = matchedQA.answer;
-          const newMessages = botReplies.map((reply) => ({
-            text: reply,
-            sender: "bot",
-          }));
-
-          setMessages((prev) => [...prev, ...newMessages]);
-
-          newMessages.forEach((message) => {
+            setMessages((prev) => [...prev, { text: formatted, sender: "bot" }]);
             dispatch({
               type: ChatboxActions.ADD_MESSAGE,
-              payload: { message },
-            });
-          });
-        } else {
-          setMessages((prev) => [
-            ...prev,
-            { text: "Sorry, I don't understand your question.", sender: "bot" },
-          ]);
-          dispatch({
-            type: ChatboxActions.ADD_MESSAGE,
-            payload: {
-              message: {
-                text: "Sorry, I don't understand your question.",
-                sender: "bot",
+              payload: {
+                message: { text: formatted, sender: "bot" },
               },
-            },
-          });
+            });
+            return; // Không gọi Gemini nếu có kết quả top khách sạn
+          }
         }
+        const city = extractCity(userMessage);
+        let weatherText = "";
+        if (city) {
+          weatherText = await getWeatherForCity(city);
+        }
+
+        const reply = await askGemini(userMessage, weatherText);
+
+        setMessages((prev) => [...prev, { text: reply, sender: "bot" }]);
+
+        dispatch({
+          type: ChatboxActions.ADD_MESSAGE,
+          payload: {
+            message: {
+              text: reply,
+              sender: "bot",
+            },
+          },
+        });
       }, 1000);
     }
   };
