@@ -753,7 +753,7 @@ const MyFeedback = () => {
         onHide={() => setShowAcceptModal(false)}
         onConfirm={confirmDeleteFeedback}
         title="Confirm Delete"
-        message="Are you sure you want to delete your feedback in list my feedback?"
+        message="Are you sure delete your feedback in list my feedback?"
         confirmButtonText="Accept"
         type="danger"
       />
