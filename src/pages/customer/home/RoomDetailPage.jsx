@@ -51,15 +51,15 @@ const styles = {
     flexWrap: "wrap",
   },
   imageSection: {
-    flex: "0 0 400px", 
-    maxWidth: "400px", 
+    flex: "0 0 400px",
+    maxWidth: "400px",
   },
   infoSection: {
-    flex: "1 1 400px", 
+    flex: "1 1 400px",
   },
   imageGallery: {
     display: "grid",
-    gridTemplateColumns: "2fr 1fr", 
+    gridTemplateColumns: "2fr 1fr",
     gridTemplateRows: "auto auto",
     gap: "0.5rem",
     gridTemplateAreas: `
@@ -73,7 +73,7 @@ const styles = {
     overflow: "hidden",
     boxShadow: "0 4px 12px rgba(0, 0, 0, 0.08)",
     gridArea: "main",
-    height: "320px", 
+    height: "320px",
   },
   mainImage: {
     width: "100%",
@@ -110,7 +110,7 @@ const styles = {
     boxShadow: "0 0 0 2px rgba(26, 43, 73, 0.3)",
   },
   thumbnailSmall: {
-    height: "155px", 
+    height: "155px",
     borderRadius: "8px",
     overflow: "hidden",
     position: "relative",
@@ -394,7 +394,7 @@ const styles = {
     gap: "1rem",
   },
   bookingSection: {
-    flex: "0 0 400px", 
+    flex: "0 0 400px",
     maxWidth: "400px",
     backgroundColor: "#f8f9fa",
     padding: "1.5rem",
@@ -404,8 +404,8 @@ const styles = {
   },
   servicesContainer: {
     marginTop: "1rem",
-    maxHeight: "none", 
-    overflowY: "visible", 
+    maxHeight: "none",
+    overflowY: "visible",
   },
   serviceItem: {
     padding: "0.75rem",
@@ -470,7 +470,7 @@ const styles = {
     fontSize: "0.85rem",
     fontWeight: "600",
   },
-  
+
   fullWidthImageSection: {
     marginBottom: "1.5rem",
     width: "100%",
@@ -480,7 +480,7 @@ const styles = {
     borderRadius: "12px",
     overflow: "hidden",
     boxShadow: "0 4px 12px rgba(0, 0, 0, 0.08)",
-    height: "400px", 
+    height: "400px",
     width: "100%",
   },
   thumbnailRow: {
@@ -493,7 +493,7 @@ const styles = {
     scrollbarColor: "#1a2b49 #f0f0f0",
   },
   thumbnailLarge: {
-    width: "200px", 
+    width: "200px",
     height: "150px",
     flexShrink: 0,
     borderRadius: "8px",
@@ -1063,108 +1063,21 @@ function MainContent() {
               </div>
 
               {/* Services Section */}
-              {hotelDetail?.services && hotelDetail.services.length > 0 && (
+              {hotelDetail?.services?.length > 0 && (
                 <div style={styles.servicesContainer}>
                   <h5 style={{ fontSize: "1rem", marginBottom: "0.75rem" }}>Available Services</h5>
-                  {hotelDetail.services.map((service) => {
-                    const isSelected = selectedServices.some((s) => s._id === service._id);
-                    const quantity = serviceQuantities[service._id] || 1;
-                    const selectedDates = serviceSelectedDates[service._id] || [];
-
-                    return (
-                      <div
-                        key={service._id}
-                        style={{
-                          ...styles.serviceItem,
-                          ...(isSelected ? styles.serviceItemSelected : {}),
-                          borderColor: isSelected ? "#1a2b49" : "#ddd",
-                          backgroundColor: isSelected ? "#f8f9fa" : "white",
-                          boxShadow: isSelected ? "0 2px 4px rgba(0,0,0,0.1)" : "none",
-                        }}
-                        onClick={() => handleServiceSelection(service)}
-                        onMouseEnter={(e) => {
-                          if (!isSelected) {
-                            e.currentTarget.style.borderColor = "#1a2b49";
-                            e.currentTarget.style.boxShadow = "0 2px 4px rgba(0,0,0,0.1)";
-                          }
-                        }}
-                        onMouseLeave={(e) => {
-                          if (!isSelected) {
-                            e.currentTarget.style.borderColor = "#ddd";
-                            e.currentTarget.style.boxShadow = "none";
-                          }
-                        }}
-                      >
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                          <h6 style={{ margin: 0 }}>{service.name}</h6>
-                          <span style={{ color: "#1a2b49", fontWeight: "600" }}>
-                            {Utils.formatCurrency(service.price)}/{service.type}
-                          </span>
-                        </div>
-                        {isSelected && (
-                          <div style={{ marginTop: "0.5rem" }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                              <button
-                                style={{
-                                  padding: "0.25rem 0.5rem",
-                                  border: "1px solid #ddd",
-                                  borderRadius: "4px",
-                                  backgroundColor: "white",
-                                  cursor: "pointer",
-                                }}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleServiceQuantityChange(service, quantity - 1);
-                                }}
-                                disabled={quantity <= 1}
-                              >
-                                -
-                              </button>
-                              <span>{quantity}</span>
-                              <button
-                                style={{
-                                  padding: "0.25rem 0.5rem",
-                                  border: "1px solid #ddd",
-                                  borderRadius: "4px",
-                                  backgroundColor: "white",
-                                  cursor: "pointer",
-                                }}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleServiceQuantityChange(service, quantity + 1);
-                                }}
-                              >
-                                +
-                              </button>
-                              <button
-                                style={{
-                                  padding: "0.25rem 0.5rem",
-                                  border: "1px solid #ddd",
-                                  borderRadius: "4px",
-                                  backgroundColor: "white",
-                                  cursor: "pointer",
-                                  marginLeft: "auto",
-                                }}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleShowDateSelector(service);
-                                }}
-                              >
-                                Select Dates
-                              </button>
-                            </div>
-                            {selectedDates.length > 0 && (
-                              <div style={{ fontSize: "0.8rem", color: "#666", marginTop: "0.5rem" }}>
-                                Selected dates: {selectedDates.map(date =>
-                                  new Date(date).toLocaleDateString()
-                                ).join(', ')}
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
+                  {hotelDetail.services.map((service) => (
+                    <ServiceItem
+                      key={service._id}
+                      service={service}
+                      isSelected={selectedServices.some((s) => s._id === service._id)}
+                      quantity={serviceQuantities[service._id] || 1}
+                      selectedDates={serviceSelectedDates[service._id] || []}
+                      onSelect={() => handleServiceSelection(service)}
+                      onQuantityChange={(newQty) => handleServiceQuantityChange(service, newQty)}
+                      onShowDateSelector={() => handleShowDateSelector(service)}
+                    />
+                  ))}
                 </div>
               )}
 
