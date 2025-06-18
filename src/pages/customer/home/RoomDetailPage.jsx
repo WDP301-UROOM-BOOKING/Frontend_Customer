@@ -51,15 +51,15 @@ const styles = {
     flexWrap: "wrap",
   },
   imageSection: {
-    flex: "0 0 400px", // Increased from 320px to 400px for larger images
-    maxWidth: "400px", // Increased from 320px to 400px
+    flex: "0 0 400px", 
+    maxWidth: "400px", 
   },
   infoSection: {
-    flex: "1 1 400px", // Flexible width for info section, minimum 400px
+    flex: "1 1 400px", 
   },
   imageGallery: {
     display: "grid",
-    gridTemplateColumns: "2fr 1fr", // Main image takes 2/3, thumbnails 1/3
+    gridTemplateColumns: "2fr 1fr", 
     gridTemplateRows: "auto auto",
     gap: "0.5rem",
     gridTemplateAreas: `
@@ -73,7 +73,7 @@ const styles = {
     overflow: "hidden",
     boxShadow: "0 4px 12px rgba(0, 0, 0, 0.08)",
     gridArea: "main",
-    height: "320px", // Increased from 240px to 320px
+    height: "320px", 
   },
   mainImage: {
     width: "100%",
@@ -110,7 +110,7 @@ const styles = {
     boxShadow: "0 0 0 2px rgba(26, 43, 73, 0.3)",
   },
   thumbnailSmall: {
-    height: "155px", // Increased from 115px to 155px (half height of main image minus gap)
+    height: "155px", 
     borderRadius: "8px",
     overflow: "hidden",
     position: "relative",
@@ -394,7 +394,7 @@ const styles = {
     gap: "1rem",
   },
   bookingSection: {
-    flex: "0 0 400px", // Increased from 350px to 400px
+    flex: "0 0 400px", 
     maxWidth: "400px",
     backgroundColor: "#f8f9fa",
     padding: "1.5rem",
@@ -404,8 +404,8 @@ const styles = {
   },
   servicesContainer: {
     marginTop: "1rem",
-    maxHeight: "none", // Remove max height restriction
-    overflowY: "visible", // Remove scroll
+    maxHeight: "none", 
+    overflowY: "visible", 
   },
   serviceItem: {
     padding: "0.75rem",
@@ -470,7 +470,7 @@ const styles = {
     fontSize: "0.85rem",
     fontWeight: "600",
   },
-  // New styles for larger image display
+  
   fullWidthImageSection: {
     marginBottom: "1.5rem",
     width: "100%",
@@ -480,7 +480,7 @@ const styles = {
     borderRadius: "12px",
     overflow: "hidden",
     boxShadow: "0 4px 12px rgba(0, 0, 0, 0.08)",
-    height: "400px", // Much larger main image
+    height: "400px", 
     width: "100%",
   },
   thumbnailRow: {
@@ -493,7 +493,7 @@ const styles = {
     scrollbarColor: "#1a2b49 #f0f0f0",
   },
   thumbnailLarge: {
-    width: "200px", // Larger thumbnails
+    width: "200px", 
     height: "150px",
     flexShrink: 0,
     borderRadius: "8px",
@@ -806,7 +806,7 @@ function MainContent() {
 
   const handleServiceQuantityChange = (service, amount) => {
     if (amount < 1) return;
-    
+
     setServiceQuantities((prev) => ({
       ...prev,
       [service._id]: amount
@@ -830,7 +830,7 @@ function MainContent() {
     setServiceSelectedDates((prev) => {
       const currentDates = prev[service._id] || [];
       const dateStr = date.toISOString();
-      
+
       if (currentDates.includes(dateStr)) {
         return {
           ...prev,
@@ -897,8 +897,7 @@ function MainContent() {
                     key={index}
                     src={
                       image ||
-                      `https://via.placeholder.com/200x150?text=Image+${
-                        index + 1
+                      `https://via.placeholder.com/200x150?text=Image+${index + 1
                       }`
                     }
                     alt={`Room view ${index + 1}`}
@@ -978,8 +977,8 @@ function MainContent() {
                         </span>
                       </div>
                     )) || (
-                      <div style={styles.noData}>No amenities available.</div>
-                    )}
+                        <div style={styles.noData}>No amenities available.</div>
+                      )}
                   </div>
                 </div>
 
@@ -994,7 +993,7 @@ function MainContent() {
                       roomDetail.bed.map((b, index) => (
                         <li key={index} style={styles.bedItem}>
                           <FaIcons.FaBed style={styles.icon} />
-                          <span style={{ color: "#333333", cursor: "pointer"}} title={b.bed?.description ?? ""}>
+                          <span style={{ color: "#333333", cursor: "pointer" }} title={b.bed?.description ?? ""}>
                             {b.quantity} x {b.bed?.name || "Unknown Bed Type"}
                           </span>
                         </li>
@@ -1071,7 +1070,7 @@ function MainContent() {
                     const isSelected = selectedServices.some((s) => s._id === service._id);
                     const quantity = serviceQuantities[service._id] || 1;
                     const selectedDates = serviceSelectedDates[service._id] || [];
-                    
+
                     return (
                       <div
                         key={service._id}
@@ -1156,7 +1155,7 @@ function MainContent() {
                             </div>
                             {selectedDates.length > 0 && (
                               <div style={{ fontSize: "0.8rem", color: "#666", marginTop: "0.5rem" }}>
-                                Selected dates: {selectedDates.map(date => 
+                                Selected dates: {selectedDates.map(date =>
                                   new Date(date).toLocaleDateString()
                                 ).join(', ')}
                               </div>
@@ -1407,10 +1406,9 @@ function MainContent() {
                   return (
                     <div
                       key={dateStr}
-                      className={`date-option p-2 border rounded ${
-                        isSelected ? "bg-primary text-white" : ""
-                      }`}
-                      style={{ 
+                      className={`date-option p-2 border rounded ${isSelected ? "bg-primary text-white" : ""
+                        }`}
+                      style={{
                         cursor: "pointer",
                         transition: "all 0.3s ease",
                         "&:hover": {
