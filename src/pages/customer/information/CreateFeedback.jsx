@@ -473,7 +473,7 @@ const CreateFeedback = () => {
           onHide={() => setShowUpdateModal(false)}
           onConfirm={handleCancel}
           title="Confirm Cancel"
-          message="Are you sure you want to cancel Create Feedback ?"
+          message="Do you really want to cancel creating feedback?"
           confirmButtonText="Confirm"
           type="warning"
         />
@@ -483,7 +483,7 @@ const CreateFeedback = () => {
           onHide={() => setShowAcceptModal(false)}
           onConfirm={handleSave}
           title="Confirm Create"
-          message="Are you sure you want to create this new feedback ?"
+          message="Do you really want to create this feedback?"
           confirmButtonText="Accept"
           type="accept"
         />
