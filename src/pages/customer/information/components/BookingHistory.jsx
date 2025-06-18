@@ -21,8 +21,10 @@ import Utils from "../../../../utils/Utils";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import Factories from "../../../../redux/search/factories";
 import Factories1 from "../../../../redux/refunding_reservation/factories";
+import ConfirmationModal from "@components/ConfirmationModal";
 
 const BookingHistory = () => {
+  const [showCancelModal, setShowCancelModal] = useState(false);
   const dispatch = useAppDispatch();
   const Auth = useAppSelector((state) => state.Auth.Auth);
 
@@ -515,9 +517,7 @@ const BookingHistory = () => {
                             <p>
                               <strong>Total price:</strong>{" "}
                               {Utils.formatCurrency(
-                                parseCurrency(
-                                  reservation.totalPrice
-                                )
+                                parseCurrency(reservation.totalPrice)
                               )}
                             </p>
                           </Col>
@@ -542,6 +542,7 @@ const BookingHistory = () => {
                       >
                         View Details
                       </Button>
+                      {/* tạo mới feedback */}
                       {activeFilter === 1 && (
                         <Button
                           variant="outline-success"
@@ -592,21 +593,32 @@ const BookingHistory = () => {
                       {activeFilter === 5 && (
                         <Button
                           variant="outline-warning"
-                          onClick={() => {
-                            console.log(reservation);
-                            // Store state in sessionStorage for complex state passing
-                            navigate(Routers.PaymentPage, {
-                              state: {
-                                createdAt: reservation.createdAt,
-                                idReservation: reservation.id,
-                                totalPrice: parseCurrency(
-                                  reservation.totalPrice
-                                ),
-                              },
-                            });
+                          onClick={async () => {
+                            const responseCheckout =
+                              await Factories.checkout_booking(reservation.id);
+                            console.log(
+                              "responseCheckout >> ",
+                              responseCheckout
+                            );
+                            const paymentUrl =
+                              responseCheckout?.data?.sessionUrl;
+                            if (paymentUrl) {
+                              window.location.href = paymentUrl;
+                            }
                           }}
                         >
                           Pay Money
+                        </Button>
+                      )}
+                      {activeFilter === 5 && (
+                        <Button
+                          variant="outline-danger"
+                          onClick={() => {
+                            setSelectedReservation(reservation);
+                            setShowCancelModal(true);
+                          }}
+                        >
+                          Cancel Booking
                         </Button>
                       )}
                     </Col>
@@ -696,7 +708,9 @@ const BookingHistory = () => {
       <ToastProvider />
       <CancelReservationModal
         selectedReservation={selectedReservation}
-        refundAmount={Utils.calculateTotalPrice(selectedReservation?.rooms) ?? 0}
+        refundAmount={
+          Utils.calculateTotalPrice(selectedReservation?.rooms) ?? 0
+        }
         show={showModal}
         onHide={() => setShowModal(false)}
         onConfirm={() => {
@@ -708,6 +722,28 @@ const BookingHistory = () => {
         setAccountHolderName={setAccountHolderName}
         setAccountNumber={setAccountNumber}
         setBankName={setBankName}
+      />
+      <ConfirmationModal
+        show={showCancelModal}
+        onHide={() => setShowCancelModal(false)}
+        onConfirm={async () => {
+          try {
+            const response = await Factories.cancel_payment(selectedReservation.id);
+            if (response?.status === 200) {
+              console.log("Response: ", response);
+              showToast.success("Cancel reservation successfully !!!");
+              fetchUserReservations();
+            }
+          } catch (error) {
+            console.error("Error fetching hotels:", error);
+          } finally {
+            setShowCancelModal(false);
+          }
+        }}
+        title="Confirm Cancellation"
+        message="Are you sure you want to cancel this booking? This action cannot be undone."
+        confirmButtonText="Cancel Booking"
+        type="danger"
       />
     </Container>
   );

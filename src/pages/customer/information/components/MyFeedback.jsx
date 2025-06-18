@@ -84,7 +84,7 @@ const MyFeedback = () => {
   useEffect(() => {
     fetchUserFeedbacks()
   }, [dispatch, sortOption, starFilter])
-
+// view feedback
   const fetchUserFeedbacks = () => {
     setLoading(true)
     dispatch({
@@ -229,6 +229,7 @@ const MyFeedback = () => {
   }
 
   // Function to confirm deletion
+  // delete feedback
   const confirmDeleteFeedback = () => {
     dispatch({
       type: FeedbackActions.DELETE_FEEDBACK,
@@ -269,7 +270,7 @@ const MyFeedback = () => {
       showToast.warning("Comment cannot be empty")
       return
     }
-
+// update feedback in the  store
     dispatch({
       type: FeedbackActions.UPDATE_FEEDBACK,
       payload: {

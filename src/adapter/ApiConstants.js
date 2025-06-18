@@ -34,6 +34,7 @@ const ApiConstants = {
 
   //CREATE_BOOKING:
   CREATE_BOOKING: 'payment/create-booking',
+  CHECKOUT_BOOKING: 'payment/checkout-booking',
   CANCEL_PAYMENT: 'payment/cancel-payment',
   ACCEPT_PAYMENT: 'payment/accept-payment',
 

@@ -1,16 +1,20 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Card, Button } from "react-bootstrap";
 import { XCircle, ArrowLeft } from "react-feather";
 import "bootstrap/dist/css/bootstrap.min.css";
 import Banner from "../../../images/banner.jpg";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import Footer from "../Footer";
 import Header from "../Header";
 import * as Routers from "../../../utils/Routes";
+import Factories from "@redux/search/factories";
 
 const PaymentFailedPage = () => {
   const navigate = useNavigate();
-
+  const [searchParams] = useSearchParams();
+  const reservationId = searchParams.get("reservationId");
+  console.log("reservationId", reservationId);
+  
   return (
     <div
       className="d-flex flex-column min-vh-100"

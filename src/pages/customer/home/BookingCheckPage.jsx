@@ -148,44 +148,95 @@ const BookingCheckPage = () => {
       })),
     };
 
+    console.log("params >> ", params);
+
+    // try {
+    //   const response = await Factories.create_booking(params);
+    //   if (response?.status === 201) {
+    //     const reservation= response?.data.reservation
+    //     console.log("reservation: ", reservation)
+    //     navigate(Routers.PaymentPage,
+    //       {
+    //         state: {
+    //           createdAt: reservation.createdAt,
+    //           totalPrice: totalPrice,
+    //           idReservation: reservation._id,
+    //           messageSuccess: response?.data.message
+    //         }
+    //       }
+    //     )
+    //   }else{
+    //     console.log("unpaidReservation: ", response?.data.unpaidReservation)
+    //     navigate(Routers.PaymentPage,
+    //       {
+    //         state: {
+    //           createdAt: response?.data.unpaidReservation.createdAt,
+    //           totalPrice: response?.data.unpaidReservation.totalPrice,
+    //           idReservation: response?.data.unpaidReservation._id,
+    //           messageError: response?.data.message
+    //         }
+    //       }
+    //     )
+    //   }
+    // } catch (error) {
+    //   console.error("Error create payment: ", error);
+    //   navigate(Routers.ErrorPage,)
+    // } finally {
+    // }
+
+    // Thinh update create booking and checkout START 13/06/2025
     try {
       const response = await Factories.create_booking(params);
+      console.log("response >> ", response);
+      if (response?.status === 200) {
+        console.log("response >> ", response);
+        const unpaidReservationId = response?.data?.unpaidReservation?._id;
+        const responseCheckout = await Factories.checkout_booking(
+          unpaidReservationId
+        );
+        console.log("responseCheckout >> ", responseCheckout);
+        const paymentUrl = responseCheckout?.data?.sessionUrl;
+        if (paymentUrl) {
+          window.location.href = paymentUrl;
+        }
+      }
       if (response?.status === 201) {
-        const reservation = response?.data.reservation;
-        navigate(Routers.PaymentPage, {
-          state: {
-            createdAt: reservation.createdAt,
-            totalPrice: totalPrice,
-            idReservation: reservation._id,
-            messageSuccess: response?.data.message,
-          },
-        });
+        console.log("response >> ", response);
+        const reservationId = response?.data?.reservation?._id;
+        const responseCheckout = await Factories.checkout_booking(
+          reservationId
+        );
+        const paymentUrl = responseCheckout?.data?.sessionUrl;
+        if (paymentUrl) {
+          window.location.href = paymentUrl;
+        }
       } else {
-        navigate(Routers.PaymentPage, {
-          state: {
-            createdAt: response?.data.unpaidReservation.createdAt,
-            totalPrice: response?.data.unpaidReservation.totalPrice,
-            idReservation: response?.data.unpaidReservation._id,
-            messageError: response?.data.message,
-          },
-        });
+        console.log("error create booking");
       }
     } catch (error) {
       console.error("Error create payment: ", error);
       navigate(Routers.ErrorPage);
     }
+    // Thinh update create booking and checkout END 13/06/2025
   };
 
   const handleAccept = () => {
-    createBooking();
-    dispatch({
-      type: SearchActions.SAVE_SELECTED_ROOMS,
-      payload: {
-        selectedRooms: [],
-        selectedServices: [],
-        hotelDetail: hotelDetail,
-      },
-    });
+    const totalRoomPrice = selectedRooms.reduce(
+      (total, { room, amount }) => total + room.price * amount * numberOfDays,
+      0
+    );
+
+    if (totalRoomPrice > 0) {
+      createBooking();
+      dispatch({
+        type: SearchActions.SAVE_SELECTED_ROOMS,
+        payload: {
+          selectedRooms: [],
+          selectedServices: [],
+          hotelDetail: hotelDetail,
+        },
+      });
+    }
   };
 
   const handleConfirmBooking = () => {
@@ -361,7 +412,8 @@ const BookingCheckPage = () => {
 
                     {selectedServices.map((service) => {
                       const selectedDates = service.selectedDates || [];
-                      const serviceQuantity = service.quantity * selectedDates.length;
+                      const serviceQuantity =
+                        service.quantity * selectedDates.length;
                       const serviceTotal = service.price * serviceQuantity;
 
                       return (
@@ -370,7 +422,8 @@ const BookingCheckPage = () => {
                           className="d-flex justify-content-between align-items-center mb-1"
                         >
                           <span>
-                            {service.quantity} x {service.name} ({selectedDates.length} days):
+                            {service.quantity} x {service.name} (
+                            {selectedDates.length} days):
                           </span>
                           <span className="fw-bold">
                             {Utils.formatCurrency(serviceTotal)}
