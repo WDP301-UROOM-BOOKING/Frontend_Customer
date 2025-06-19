@@ -1267,383 +1267,433 @@ export default function HotelDetailPage() {
         </Row>
       </Container>
       <Container className="rooms-section py-5">
-        <h3
-          className="text-center text-uppercase fw-bold mb-5"
-          style={{ color: "#1a2b49", fontSize: "2.5rem" }}
-        >
-          Hotel Rooms
-        </h3>
-
-        {searchRoom ? (
-          <div className="text-center py-5">
-            <Spinner
-              animation="border"
-              role="status"
-              variant="primary"
-              style={{ width: "3rem", height: "3rem" }}
-            >
-              <span className="visually-hidden">Loading...</span>
-            </Spinner>
-            <p className="mt-3" style={{ color: "#666", fontSize: "1.1rem" }}>
-              Loading available rooms...
-            </p>
-          </div>
-        ) : (
+        {/* Only show Hotel Rooms section if there are rooms available */}
+        {rooms && rooms.length > 0 && (
           <>
-            <div style={{ position: "relative" }}>
-              {/* Nút trái */}
-              <Button
-                variant="light"
-                onClick={() => {
-                  scrollRefRoom.current.scrollBy({
-                    left: -400,
-                    behavior: "smooth",
-                  });
-                }}
-                style={{
-                  position: "absolute",
-                  top: "50%",
-                  left: "-20px",
-                  transform: "translateY(-50%)",
-                  zIndex: 10,
-                  borderRadius: "50%",
-                  padding: "10px",
-                  boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
-                }}
-              >
-                <FaChevronLeft />
-              </Button>
+            <h3
+              className="text-center text-uppercase fw-bold mb-5"
+              style={{ color: "#1a2b49", fontSize: "2.5rem" }}
+            >
+              Hotel Rooms
+            </h3>
 
-              {/* Nút phải */}
-              <Button
-                variant="light"
-                onClick={() => {
-                  scrollRefRoom.current.scrollBy({
-                    left: 400,
-                    behavior: "smooth",
-                  });
-                }}
-                style={{
-                  position: "absolute",
-                  top: "50%",
-                  right: "-20px",
-                  transform: "translateY(-50%)",
-                  zIndex: 10,
-                  borderRadius: "50%",
-                  padding: "10px",
-                  boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
-                }}
-              >
-                <FaChevronRight />
-              </Button>
-
-              {/* Danh sách khách sạn */}
-              <div
-                ref={scrollRefRoom}
-                className="horizontal-scroll mt-5"
-                style={{
-                  display: "flex",
-                  overflowX: "hidden", // ❌ ẩn scroll
-                  scrollSnapType: "x mandatory",
-                  gap: "20px",
-                  paddingBottom: "20px",
-                }}
-              >
-                {rooms.map((room) => (
-                  <div
-                    key={room.id || room._id}
+            {searchRoom ? (
+              <div className="text-center py-5">
+                <Spinner
+                  animation="border"
+                  role="status"
+                  variant="primary"
+                  style={{ width: "3rem", height: "3rem" }}
+                >
+                  <span className="visually-hidden">Loading...</span>
+                </Spinner>
+                <p className="mt-3" style={{ color: "#666", fontSize: "1.1rem" }}>
+                  Loading available rooms...
+                </p>
+              </div>
+            ) : (
+              <>
+                <div style={{ position: "relative" }}>
+                  {/* Nút trái */}
+                  <Button
+                    variant="light"
+                    onClick={() => {
+                      scrollRefRoom.current.scrollBy({
+                        left: -400,
+                        behavior: "smooth",
+                      });
+                    }}
                     style={{
-                      minWidth: "400px",
-                      maxWidth: "400px",
-                      scrollSnapAlign: "start",
+                      position: "absolute",
+                      top: "50%",
+                      left: "-20px",
+                      transform: "translateY(-50%)",
+                      zIndex: 10,
+                      borderRadius: "50%",
+                      padding: "10px",
+                      boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
                     }}
                   >
-                    <Card
-                      className="shadow-sm border-0 h-100 room-card"
-                      style={{
-                        borderRadius: "15px",
-                        transition: "transform 0.3s ease, box-shadow 0.3s ease",
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.transform = "translateY(-5px)";
-                        e.currentTarget.style.boxShadow =
-                          "0 8px 16px rgba(0,0,0,0.1)";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.transform = "translateY(0)";
-                        e.currentTarget.style.boxShadow = "none";
-                      }}
-                    >
+                    <FaChevronLeft />
+                  </Button>
+
+                  {/* Nút phải */}
+                  <Button
+                    variant="light"
+                    onClick={() => {
+                      scrollRefRoom.current.scrollBy({
+                        left: 400,
+                        behavior: "smooth",
+                      });
+                    }}
+                    style={{
+                      position: "absolute",
+                      top: "50%",
+                      right: "-20px",
+                      transform: "translateY(-50%)",
+                      zIndex: 10,
+                      borderRadius: "50%",
+                      padding: "10px",
+                      boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
+                    }}
+                  >
+                    <FaChevronRight />
+                  </Button>
+
+                  {/* Danh sách phòng */}
+                  <div
+                    ref={scrollRefRoom}
+                    className="horizontal-scroll mt-5"
+                    style={{
+                      display: "flex",
+                      overflowX: "hidden",
+                      scrollSnapType: "x mandatory",
+                      gap: "20px",
+                      paddingBottom: "20px",
+                    }}
+                  >
+                    {rooms.map((room) => (
                       <div
-                        className="overflow-hidden"
+                        key={room.id || room._id}
                         style={{
-                          borderTopLeftRadius: "15px",
-                          borderTopRightRadius: "15px",
+                          minWidth: "400px",
+                          maxWidth: "400px",
+                          scrollSnapAlign: "start",
                         }}
                       >
-                        <Card.Img
-                          variant="top"
-                          src={room.images?.[0] || "/default-room.jpg"}
-                          alt={room.type}
-                          onClick={() =>
-                            handleRoomClick(
-                              room.id || room._id,
-                              room.availableQuantity
-                            )
-                          }
+                        <Card
+                          className="shadow-sm border-0 h-100 room-card"
                           style={{
-                            height: "220px",
-                            objectFit: "cover",
-                            cursor: "pointer",
-                            width: "100%",
-                            transition: "transform 0.3s ease",
+                            borderRadius: "15px",
+                            transition: "transform 0.3s ease, box-shadow 0.3s ease",
                           }}
-                          onMouseOver={(e) =>
-                            (e.currentTarget.style.transform = "scale(1.02)")
-                          }
-                          onMouseOut={(e) =>
-                            (e.currentTarget.style.transform = "scale(1)")
-                          }
-                        />
-                      </div>
-
-                      <Card.Body className="d-flex flex-column justify-content-between p-3">
-                        <div>
-                          <Card.Title
-                            onClick={() => handleRoomClick(room.id || room._id)}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.transform = "translateY(-5px)";
+                            e.currentTarget.style.boxShadow =
+                              "0 8px 16px rgba(0,0,0,0.1)";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.transform = "translateY(0)";
+                            e.currentTarget.style.boxShadow = "none";
+                          }}
+                        >
+                          <div
+                            className="overflow-hidden"
                             style={{
-                              fontSize: "1.25rem",
-                              fontWeight: 700,
-                              color: "#1a2b49",
-                              cursor: "pointer",
+                              borderTopLeftRadius: "15px",
+                              borderTopRightRadius: "15px",
                             }}
                           >
-                            {room?.name}
-                            {getRoomAmount(room._id || room.id) > 0 && (
-                              <span
-                                className="ms-2 badge"
-                                style={{
-                                  backgroundColor: "#1a2b49",
-                                  color: "white",
-                                  fontSize: "0.75rem",
-                                  padding: "0.25rem 0.5rem",
-                                  borderRadius: "20px",
-                                }}
-                              >
-                                {getRoomAmount(room._id || room.id)} selected
-                              </span>
-                            )}
-                          </Card.Title>
-
-                          <div className="d-flex align-items-center text-muted mb-2">
-                            <FaUser className="me-2" />
-                            <span style={{ fontSize: "0.95rem" }}>
-                              {room.capacity} Guests
-                            </span>
-                          </div>
-
-                          <div
-                            className="text-primary fw-bold"
-                            style={{ fontSize: "1.4rem", marginBottom: "8px" }}
-                          >
-                            {Utils.formatCurrency(room.price)}
-                            <span
-                              className="text-muted"
-                              style={{ fontSize: "0.85rem", marginLeft: "4px" }}
-                            >
-                              / Day
-                            </span>
-                          </div>
-                        </div>
-
-                        <div>
-                          {room.availableQuantity <= 3 ? (
-                            <div
-                              className="text-danger fw-semibold"
-                              style={{
-                                fontSize: "0.95rem",
-                                marginBottom: "10px",
-                              }}
-                            >
-                              Only {room.availableQuantity} rooms left for this
-                              room type!
-                            </div>
-                          ) : (
-                            <div
-                              className="fw-semibold"
-                              style={{
-                                fontSize: "0.95rem",
-                                marginBottom: "10px",
-                              }}
-                            >
-                              Have {room.availableQuantity} rooms left for this
-                              room type!
-                            </div>
-                          )}
-                          <div className="mt-2 d-flex justify-content-between align-items-center">
-                            <span
-                              className="text-muted"
-                              style={{ fontSize: "0.9rem", fontWeight: 600 }}
-                            >
-                              Amount
-                            </span>
-                            <select
-                              className="form-select w-auto"
-                              style={{ fontSize: "0.9rem" }}
-                              value={getRoomAmountFromRedux(
-                                room._id || room.id
-                              )}
-                              onChange={(e) =>
-                                handleAmountChange(room, Number(e.target.value))
-                              }
-                            >
-                              {Array.from(
-                                { length: room.availableQuantity + 1 },
-                                (_, n) => (
-                                  <option key={n} value={n}>
-                                    {n}
-                                  </option>
+                            <Card.Img
+                              variant="top"
+                              src={room.images?.[0] || "/default-room.jpg"}
+                              alt={room.type}
+                              onClick={() =>
+                                handleRoomClick(
+                                  room.id || room._id,
+                                  room.availableQuantity
                                 )
-                              )}
-                            </select>
+                              }
+                              style={{
+                                height: "220px",
+                                objectFit: "cover",
+                                cursor: "pointer",
+                                width: "100%",
+                                transition: "transform 0.3s ease",
+                              }}
+                              onMouseOver={(e) =>
+                                (e.currentTarget.style.transform = "scale(1.02)")
+                              }
+                              onMouseOut={(e) =>
+                                (e.currentTarget.style.transform = "scale(1)")
+                              }
+                            />
                           </div>
-                        </div>
-                      </Card.Body>
-                    </Card>
-                  </div>
-                ))}
-              </div>
-            </div>
 
-            {hotelDetail?.services && hotelDetail.services.length > 0 && (
-              <Row className="mt-4 mb-4">
-                <h3
-                  className="text-center text-uppercase fw-bold mb-5"
-                  style={{ color: "#1a2b49", fontSize: "2.5rem" }}
-                >
-                  Services
-                </h3>
-                <Col>
-                  <Card className="p-4">
-                    <div className="services-container mt-4">
-                      <div className="row">
-                        {hotelDetail.services.map((service) => {
-                          const isSelected = selectedServices.some((s) => s._id === service._id);
-                          const quantity = serviceQuantities[service._id] || 1;
-                          const selectedDates = serviceSelectedDates[service._id] || [];
-                          
-                          return (
-                            <div key={service._id} className="col-md-4 mb-3">
-                              <div
-                                className={`service-card p-3 ${
-                                  isSelected ? "selected" : ""
-                                }`}
+                          <Card.Body className="d-flex flex-column justify-content-between p-3">
+                            <div>
+                              <Card.Title
+                                onClick={() => handleRoomClick(room.id || room._id)}
                                 style={{
-                                  border: "1px solid #ddd",
-                                  borderRadius: "8px",
+                                  fontSize: "1.25rem",
+                                  fontWeight: 700,
+                                  color: "#1a2b49",
                                   cursor: "pointer",
-                                  transition: "all 0.3s ease",
-                                  backgroundColor: isSelected ? "#f8f9fa" : "white",
-                                  boxShadow: isSelected ? "0 2px 4px rgba(0,0,0,0.1)" : "none"
                                 }}
-                                onClick={() => handleServiceSelection(service)}
                               >
-                                <h5>{service.name}</h5>
-                                <p>{service.description}</p>
-                                <p className="text-primary fw-bold">
-                                  {Utils.formatCurrency(service.price)}/{service.type}
-                                </p>
-                                {isSelected && (
-                                  <div className="d-flex align-items-center justify-content-between mt-2">
-                                    <div className="d-flex align-items-center">
-                                      <button
-                                        className="btn btn-sm btn-outline-primary"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          handleServiceQuantityChange(service, quantity - 1);
-                                        }}
-                                        disabled={quantity <= 1}
-                                      >
-                                        -
-                                      </button>
-                                      <span className="mx-2">{quantity}</span>
-                                      <button
-                                        className="btn btn-sm btn-outline-primary"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          handleServiceQuantityChange(service, quantity + 1);
-                                        }}
-                                      >
-                                        +
-                                      </button>
-                                    </div>
-                                    <button
-                                      className="btn btn-sm btn-outline-secondary"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleShowDateSelector(service);
-                                      }}
-                                    >
-                                      Select Date
-                                    </button>
-                                  </div>
+                                {room?.name}
+                                {getRoomAmount(room._id || room.id) > 0 && (
+                                  <span
+                                    className="ms-2 badge"
+                                    style={{
+                                      backgroundColor: "#1a2b49",
+                                      color: "white",
+                                      fontSize: "0.75rem",
+                                      padding: "0.25rem 0.5rem",
+                                      borderRadius: "20px",
+                                    }}
+                                  >
+                                    {getRoomAmount(room._id || room.id)} selected
+                                  </span>
                                 )}
-                                {isSelected && selectedDates.length > 0 && (
-                                  <div className="mt-2 small text-muted">
-                                    Selected dates: {selectedDates.map(date => 
-                                      new Date(date).toLocaleDateString()
-                                    ).join(', ')}
-                                  </div>
-                                )}
+                              </Card.Title>
+
+                              <div className="d-flex align-items-center text-muted mb-2">
+                                <FaUser className="me-2" />
+                                <span style={{ fontSize: "0.95rem" }}>
+                                  {room.capacity} Guests
+                                </span>
+                              </div>
+
+                              <div
+                                className="text-primary fw-bold"
+                                style={{ fontSize: "1.4rem", marginBottom: "8px" }}
+                              >
+                                {Utils.formatCurrency(room.price)}
+                                <span
+                                  className="text-muted"
+                                  style={{ fontSize: "0.85rem", marginLeft: "4px" }}
+                                >
+                                  / Day
+                                </span>
                               </div>
                             </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </Card>
-                </Col>
-              </Row>
-            )}
 
-            <div className="text-center mt-5">
-              <Button
-                variant="primary"
-                onClick={handleBookingClick}
-                style={{
-                  padding: "0.8rem 4rem",
-                  borderRadius: "30px",
-                  backgroundColor: "#1a2b49",
-                  border: "none",
-                  fontSize: "1.1rem",
-                  fontWeight: 600,
-                  transition: "all 0.3s ease",
-                }}
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.backgroundColor = "#2c4373")
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.backgroundColor = "#1a2b49")
-                }
-              >
-                Book Now
-              </Button>
-            </div>
-            <ErrorModal
-              show={showModal}
-              onClose={() => {
-                setShowModal(false);
-              }}
-              message={errorMessage}
-            />
-            <HotelClosedModal
-              show={showModalStatusBooking}
-              onClose={() => {
-                setShowModalStatusBooking(false);
-              }}
-            />
+                            <div>
+                              {room.availableQuantity <= 3 ? (
+                                <div
+                                  className="text-danger fw-semibold"
+                                  style={{
+                                    fontSize: "0.95rem",
+                                    marginBottom: "10px",
+                                  }}
+                                >
+                                  Only {room.availableQuantity} rooms left for this
+                                  room type!
+                                </div>
+                              ) : (
+                                <div
+                                  className="fw-semibold"
+                                  style={{
+                                    fontSize: "0.95rem",
+                                    marginBottom: "10px",
+                                  }}
+                                >
+                                  Have {room.availableQuantity} rooms left for this
+                                  room type!
+                                </div>
+                              )}
+                              <div className="mt-2 d-flex justify-content-between align-items-center">
+                                <span
+                                  className="text-muted"
+                                  style={{ fontSize: "0.9rem", fontWeight: 600 }}
+                                >
+                                  Amount
+                                </span>
+                                <select
+                                  className="form-select w-auto"
+                                  style={{ fontSize: "0.9rem" }}
+                                  value={getRoomAmountFromRedux(
+                                    room._id || room.id
+                                  )}
+                                  onChange={(e) =>
+                                    handleAmountChange(room, Number(e.target.value))
+                                  }
+                                >
+                                  {Array.from(
+                                    { length: room.availableQuantity + 1 },
+                                    (_, n) => (
+                                      <option key={n} value={n}>
+                                        {n}
+                                      </option>
+                                    )
+                                  )}
+                                </select>
+                              </div>
+                            </div>
+                          </Card.Body>
+                        </Card>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
           </>
         )}
+
+        {/* Only show Services section if there are services available */}
+        {hotelDetail?.services && hotelDetail.services.filter(service => service.statusActive === "ACTIVE").length > 0 && (
+          <Row className="mt-4 mb-4">
+            <h3
+              className="text-center text-uppercase fw-bold mb-5"
+              style={{ color: "#1a2b49", fontSize: "2.5rem" }}
+            >
+              Services
+            </h3>
+            <Col>
+              <Card className="p-4">
+                <div className="services-container mt-4">
+                  <div className="row">
+                    {hotelDetail?.services?.map((service) => {
+                      // Only show active services
+                      if (service.statusActive !== "ACTIVE") return null;
+                      
+                      const isSelected = selectedServices.some((s) => s._id === service._id);
+                      const quantity = serviceQuantities[service._id] || 1;
+                      const selectedDates = serviceSelectedDates[service._id] || [];
+                      
+                      return (
+                        <div key={service._id} className="col-md-4 mb-3">
+                          <div
+                            className={`service-card p-3 ${
+                              isSelected ? "selected" : ""
+                            }`}
+                            style={{
+                              border: "1px solid #ddd",
+                              borderRadius: "8px",
+                              cursor: "pointer",
+                              transition: "all 0.3s ease",
+                              backgroundColor: isSelected ? "#f8f9fa" : "white",
+                              boxShadow: isSelected ? "0 2px 4px rgba(0,0,0,0.1)" : "none"
+                            }}
+                            onClick={() => handleServiceSelection(service)}
+                          >
+                            <h5>{service.name}</h5>
+                            <p>{service.description}</p>
+                            <p className="text-primary fw-bold">
+                              {Utils.formatCurrency(service.price)}/{service.type}
+                            </p>
+                            {isSelected && (
+                              <div className="d-flex align-items-center justify-content-between mt-2">
+                                <div className="d-flex align-items-center">
+                                  <button
+                                    className="btn btn-sm btn-outline-primary"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleServiceQuantityChange(service, quantity - 1);
+                                    }}
+                                    disabled={quantity <= 1}
+                                  >
+                                    -
+                                  </button>
+                                  <span className="mx-2">{quantity}</span>
+                                  <button
+                                    className="btn btn-sm btn-outline-primary"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleServiceQuantityChange(service, quantity + 1);
+                                    }}
+                                  >
+                                    +
+                                  </button>
+                                </div>
+                                <button
+                                  className="btn btn-sm btn-outline-secondary"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleShowDateSelector(service);
+                                  }}
+                                >
+                                  Select Date
+                                </button>
+                              </div>
+                            )}
+                            {isSelected && selectedDates.length > 0 && (
+                              <div className="mt-2 small text-muted">
+                                Selected dates: {selectedDates.map(date => 
+                                  new Date(date).toLocaleDateString()
+                                ).join(', ')}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </Card>
+            </Col>
+          </Row>
+        )}
+
+        {/* Show Book Now button only if there are rooms or services available */}
+        {((rooms && rooms.length > 0) || 
+          (hotelDetail?.services && hotelDetail.services.filter(service => service.statusActive === "ACTIVE").length > 0)) && (
+          <div className="text-center mt-5">
+            <Button
+              variant="primary"
+              onClick={handleBookingClick}
+              style={{
+                padding: "0.8rem 4rem",
+                borderRadius: "30px",
+                backgroundColor: "#1a2b49",
+                border: "none",
+                fontSize: "1.1rem",
+                fontWeight: 600,
+                transition: "all 0.3s ease",
+              }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.backgroundColor = "#2c4373")
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.backgroundColor = "#1a2b49")
+              }
+            >
+              Book Now
+            </Button>
+          </div>
+        )}
+
+        {/* Show message when no rooms and no services available */}
+        {(!rooms || rooms.length === 0) && 
+         (!hotelDetail?.services || hotelDetail.services.filter(service => service.statusActive === "ACTIVE").length === 0) && 
+         !searchRoom && (
+          <div className="text-center py-5">
+            <div className="mb-4">
+              <h4 className="text-muted">No Rooms or Services Available</h4>
+              <p className="text-muted">
+                This hotel currently has no available rooms or services for your selected dates.
+                <br />
+                Please try different dates or contact the hotel directly.
+              </p>
+            </div>
+            <Button
+              variant="outline-primary"
+              onClick={() => {
+                if(Auth._id != -1){
+                  navigate(Routers.ChatPage, {
+                    state: {
+                      receiver: {
+                        ...hotelDetail.owner,
+                        ownedHotels: [{ hotelName: hotelDetail.hotelName }],
+                      },
+                    },
+                  });
+                }else{
+                  navigate(Routers.LoginPage);
+                }
+              }}
+            >
+              Contact with hotel
+            </Button>
+          </div>
+        )}
+
+        {/* Existing error modals */}
+        <ErrorModal
+          show={showModal}
+          onClose={() => {
+            setShowModal(false);
+          }}
+          message={errorMessage}
+        />
+        <HotelClosedModal
+          show={showModalStatusBooking}
+          onClose={() => {
+            setShowModalStatusBooking(false);
+          }}
+        />
       </Container>
       {/* Other Hotels */}
       {/* Map Modal */}
@@ -1675,7 +1725,8 @@ export default function HotelDetailPage() {
       </Modal>
       {searchRoom ? (
         <div></div>
-      ) : (
+      ) :
+      (
         <Container className="other-hotels-section position-relative">
           <h1 className="section-title" style={{ fontSize: "2.5rem" }}>
             Special Offers Just For You
