@@ -44,7 +44,8 @@ import Pagination from "@components/Pagination";
 import MapComponent from "@pages/MapLocation";
 import AuthActions from "../../../redux/auth/actions";
 import { ChatBox } from "./HomePage";
-
+import { getWeatherForCity } from "src/utils/chatAI";
+import axios from "axios";
 // Options for adults and children select
 const adultsOptions = Array.from({ length: 20 }, (_, i) => ({
   value: i + 1,
@@ -171,13 +172,55 @@ const HotelSearchPage = () => {
   );
   const [selectedAdults, setSelectedAdults] = useState(
     adultsOptions.find((option) => option.value === SearchInformation.adults) ||
-      adultsOptions[0]
+    adultsOptions[0]
   );
   const [selectedChildren, setSelectedChildren] = useState(
     childrenOptions.find(
       (option) => option.value === SearchInformation.childrens
     ) || childrenOptions[0]
   );
+
+  // Thêm state cho weather
+  const [weather, setWeather] = useState([]);
+  const [weatherLoading, setWeatherLoading] = useState(false);
+  const [weatherError, setWeatherError] = useState("");
+
+  // Hàm lấy dữ liệu thời tiết
+  // const WEATHER_API_KEY = process.env.REACT_APP_WEATHER_API_KEY;
+  const OPENWEATHER_API_KEY = process.env.REACT_APP_OPENWEATHER_API_KEY;
+
+  useEffect(() => {
+    if (!selectedCity?.label) return;
+
+    const fetchWeather = async () => {
+      setWeatherLoading(true);
+      setWeatherError("");
+      try {
+        // B1: Lấy lat/lon từ city name
+        let cityName = selectedCity.label;
+        if (cityName === "Hà Nội") cityName = "Hanoi";
+        if (cityName === "Đà Nẵng") cityName = "Da Nang";
+        if (cityName === "TP Hồ Chí Minh" || cityName === "Hồ Chí Minh") cityName = "Ho Chi Minh City";
+        const geoUrl = `https://pro.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(cityName)}&limit=1&appid=0214f2585550f3b9f85bdd44ca9e60e2`;
+        const geoRes = await axios.get(geoUrl);
+        if (!geoRes.data || geoRes.data.length === 0) throw new Error("Không tìm thấy vị trí thành phố.");
+        const { lat, lon } = geoRes.data[0];
+        console.log("City coordinates:", lat, lon);
+        // Lấy 7-day forecast từ lat/lon (dùng endpoint pro)
+        const weatherUrl = `https://pro.openweathermap.org/data/2.5/forecast/daily?lat=${lat}&lon=${lon}&cnt=7&appid=0214f2585550f3b9f85bdd44ca9e60e2&lang=vi`;
+        const weatherRes = await axios.get(weatherUrl);
+        const forecastDays = weatherRes.data.list.slice(0, 7); // Lấy 7 ngày
+        console.log("Weather forecast data:", forecastDays);
+        setWeather(forecastDays);
+      } catch (err) {
+        setWeatherError("Không lấy được dữ liệu thời tiết.");
+        setWeather([]);
+      }
+      setWeatherLoading(false);
+    };
+
+    fetchWeather();
+  }, [selectedCity]);
 
   // State for search results and filters
   const [loading, setLoading] = useState(true);
@@ -381,7 +424,7 @@ const HotelSearchPage = () => {
           };
           fetchHotels();
         },
-        onFailed: (msg) => {},
+        onFailed: (msg) => { },
         onError: (error) => console.error(error),
       },
     });
@@ -651,6 +694,68 @@ const HotelSearchPage = () => {
             </div>
           </div>
 
+          {/* Weather Forecast */}
+          <div className="mb-4">
+            <h5>
+              <span role="img" aria-label="weather">🌤️</span> Dự báo thời tiết 7 ngày tại {selectedCity?.label}
+            </h5>
+            {weatherLoading ? (
+              <div>Đang tải thời tiết...</div>
+            ) : weatherError ? (
+              <div className="text-danger">{weatherError}</div>
+            ) : (
+              <div
+                style={{
+                  display: "flex",
+                  gap: 20,
+                  overflowX: "auto",
+                  paddingBottom: 8,
+                  marginTop: 8,
+                }}
+              >
+                {weather.map((day, idx) => (
+                  <div
+                    key={idx}
+                    style={{
+                      minWidth: 160,
+                      background: "linear-gradient(135deg, #e0e7ff 0%, #f8fafc 100%)",
+                      border: "1px solid #dbeafe",
+                      borderRadius: 18,
+                      padding: 18,
+                      textAlign: "center",
+                      boxShadow: "0 2px 12px #e0e7ef",
+                      flex: "0 0 auto",
+                      transition: "transform 0.2s",
+                    }}
+                  >
+                    <div style={{ fontWeight: 700, fontSize: 16, color: "#2563eb" }}>
+                      {new Date(day.dt * 1000).toLocaleDateString("vi-VN", {
+                        weekday: "short",
+                        day: "2-digit",
+                        month: "2-digit",
+                      })}
+                    </div>
+                    <img
+                      src={`https://openweathermap.org/img/wn/${day.weather[0].icon}@2x.png`}
+                      alt={day.weather[0].description}
+                      style={{ width: 60, margin: "8px 0" }}
+                    />
+                    <div style={{ fontSize: 22, fontWeight: 700, color: "#2563eb" }}>
+                      {Math.round(day.temp.day - 273.15)}°C
+                    </div>
+                    <div style={{ fontSize: 14, color: "#64748b", minHeight: 24 }}>
+                      {day.weather[0].description.charAt(0).toUpperCase() + day.weather[0].description.slice(1)}
+                    </div>
+                    <div style={{ fontSize: 13, color: "#94a3b8" }}>
+                      🌡️ {Math.round(day.temp.min - 273.15)}°C - {Math.round(day.temp.max - 273.15)}°C
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          {/* End Weather Forecast */}
+
           {/* Main Content */}
           <Row>
             {/* Filters Sidebar */}
@@ -887,7 +992,7 @@ const HotelSearchPage = () => {
                                   {/* Facilities */}
                                   <div className="mt-3 d-flex flex-wrap gap-2">
                                     {inforHotel.facilities &&
-                                    inforHotel.facilities.length > 0 ? (
+                                      inforHotel.facilities.length > 0 ? (
                                       inforHotel.facilities
                                         .map((feature, i) => {
                                           const matchedFeature =
@@ -1031,7 +1136,7 @@ const HotelSearchPage = () => {
           </Modal>
         </Container>
         <div>
-          <ChatBox/>
+          <ChatBox />
         </div>
       </div>
       <Footer />
