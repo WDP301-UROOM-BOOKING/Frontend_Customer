@@ -27,9 +27,15 @@ const BookingCheckPage = () => {
   const SearchInformation = useAppSelector(
     (state) => state.Search.SearchInformation
   );
-  const selectedRoomsTemps = useAppSelector((state) => state.Search.selectedRooms);
-  const selectedServicesFromRedux = useAppSelector((state) => state.Search.selectedServices);
-  const hotelDetailFromRedux = useAppSelector((state) => state.Search.hotelDetail);
+  const selectedRoomsTemps = useAppSelector(
+    (state) => state.Search.selectedRooms
+  );
+  const selectedServicesFromRedux = useAppSelector(
+    (state) => state.Search.selectedServices
+  );
+  const hotelDetailFromRedux = useAppSelector(
+    (state) => state.Search.hotelDetail
+  );
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const [bookingFor, setBookingFor] = useState("mainGuest");
@@ -39,16 +45,18 @@ const BookingCheckPage = () => {
     selectedRooms: selectedRoomsTemps || [],
     selectedServices: selectedServicesFromRedux || [],
     hotelDetail: hotelDetailFromRedux || null,
-    searchInfo: SearchInformation
+    searchInfo: SearchInformation,
   });
 
   // Restore data from sessionStorage stack when component mounts
   useEffect(() => {
-    const bookingStack = JSON.parse(sessionStorage.getItem('bookingStack') || '[]');
+    const bookingStack = JSON.parse(
+      sessionStorage.getItem("bookingStack") || "[]"
+    );
     if (bookingStack.length > 0) {
       const currentBooking = bookingStack[bookingStack.length - 1];
       setBookingData(currentBooking);
-      
+
       // Update Redux store with current data
       dispatch({
         type: SearchActions.SAVE_SELECTED_ROOMS,
@@ -63,11 +71,13 @@ const BookingCheckPage = () => {
 
   // Handle navigation back to HomeDetailPage
   const handleBackToHomeDetail = () => {
-    const bookingStack = JSON.parse(sessionStorage.getItem('bookingStack') || '[]');
+    const bookingStack = JSON.parse(
+      sessionStorage.getItem("bookingStack") || "[]"
+    );
     if (bookingStack.length > 0) {
       // Remove the current booking from stack
       bookingStack.pop();
-      sessionStorage.setItem('bookingStack', JSON.stringify(bookingStack));
+      sessionStorage.setItem("bookingStack", JSON.stringify(bookingStack));
     }
     navigate(-1);
   };
@@ -112,14 +122,11 @@ const BookingCheckPage = () => {
       0
     );
 
-    const totalServicePrice = selectedServices.reduce(
-      (total, service) => {
-        const selectedDates = service.selectedDates || [];
-        const serviceQuantity = service.quantity * selectedDates.length;
-        return total + (service.price * serviceQuantity);
-      },
-      0
-    );
+    const totalServicePrice = selectedServices.reduce((total, service) => {
+      const selectedDates = service.selectedDates || [];
+      const serviceQuantity = service.quantity * selectedDates.length;
+      return total + service.price * serviceQuantity;
+    }, 0);
 
     const totalPrice = totalRoomPrice + totalServicePrice;
 
@@ -130,47 +137,106 @@ const BookingCheckPage = () => {
       totalPrice: totalPrice,
       roomDetails: selectedRooms.map(({ room, amount }) => ({
         room: {
-          _id: room._id
+          _id: room._id,
         },
-        amount: amount
+        amount: amount,
       })),
-      serviceDetails: selectedServices.map(service => ({
+      serviceDetails: selectedServices.map((service) => ({
         _id: service._id,
         quantity: service.quantity * (service.selectedDates?.length || 0),
-        selectDate: service.selectedDates || []
-      }))
-    }
+        selectDate: service.selectedDates || [],
+      })),
+    };
 
+    console.log("params >> ", params);
+
+    // try {
+    //   const response = await Factories.create_booking(params);
+    //   if (response?.status === 201) {
+    //     const reservation= response?.data.reservation
+    //     console.log("reservation: ", reservation)
+    //     navigate(Routers.PaymentPage,
+    //       {
+    //         state: {
+    //           createdAt: reservation.createdAt,
+    //           totalPrice: totalPrice,
+    //           idReservation: reservation._id,
+    //           messageSuccess: response?.data.message
+    //         }
+    //       }
+    //     )
+    //   }else{
+    //     console.log("unpaidReservation: ", response?.data.unpaidReservation)
+    //     navigate(Routers.PaymentPage,
+    //       {
+    //         state: {
+    //           createdAt: response?.data.unpaidReservation.createdAt,
+    //           totalPrice: response?.data.unpaidReservation.totalPrice,
+    //           idReservation: response?.data.unpaidReservation._id,
+    //           messageError: response?.data.message
+    //         }
+    //       }
+    //     )
+    //   }
+    // } catch (error) {
+    //   console.error("Error create payment: ", error);
+    //   navigate(Routers.ErrorPage,)
+    // } finally {
+    // }
+
+    // Thinh update create booking and checkout START 13/06/2025
     try {
       const response = await Factories.create_booking(params);
+      console.log("response >> ", response);
+      if (response?.status === 200) {
+        console.log("response >> ", response);
+        const unpaidReservationId = response?.data?.unpaidReservation?._id;
+        const responseCheckout = await Factories.checkout_booking(
+          unpaidReservationId
+        );
+        console.log("responseCheckout >> ", responseCheckout);
+        const paymentUrl = responseCheckout?.data?.sessionUrl;
+        if (paymentUrl) {
+          window.location.href = paymentUrl;
+        }
+      }
       if (response?.status === 201) {
-        const reservation = response?.data.reservation;
-        navigate(Routers.PaymentPage, {
-          state: {
-            createdAt: reservation.createdAt,
-            totalPrice: totalPrice,
-            idReservation: reservation._id,
-            messageSuccess: response?.data.message
-          }
-        });
+        console.log("response >> ", response);
+        const reservationId = response?.data?.reservation?._id;
+        const responseCheckout = await Factories.checkout_booking(
+          reservationId
+        );
+        const paymentUrl = responseCheckout?.data?.sessionUrl;
+        if (paymentUrl) {
+          window.location.href = paymentUrl;
+        }
       } else {
-        navigate(Routers.PaymentPage, {
-          state: {
-            createdAt: response?.data.unpaidReservation.createdAt,
-            totalPrice: response?.data.unpaidReservation.totalPrice,
-            idReservation: response?.data.unpaidReservation._id,
-            messageError: response?.data.message
-          }
-        });
+        console.log("error create booking");
       }
     } catch (error) {
       console.error("Error create payment: ", error);
       navigate(Routers.ErrorPage);
     }
+    // Thinh update create booking and checkout END 13/06/2025
   };
 
   const handleAccept = () => {
-    createBooking();
+    const totalRoomPrice = selectedRooms.reduce(
+      (total, { room, amount }) => total + room.price * amount * numberOfDays,
+      0
+    );
+
+    if (totalRoomPrice > 0) {
+      createBooking();
+      dispatch({
+        type: SearchActions.SAVE_SELECTED_ROOMS,
+        payload: {
+          selectedRooms: [],
+          selectedServices: [],
+          hotelDetail: hotelDetail,
+        },
+      });
+    }
   };
 
   const handleConfirmBooking = () => {
@@ -180,17 +246,20 @@ const BookingCheckPage = () => {
   const formatCurrency = (amount) => {
     if (amount === undefined || amount === null) return "$0";
     return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
+      style: "currency",
+      currency: "USD",
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
     }).format(amount);
   };
 
   // Add null check for hotelDetail
   if (!hotelDetail) {
     return (
-      <div className="d-flex justify-content-center align-items-center" style={{ height: "100vh" }}>
+      <div
+        className="d-flex justify-content-center align-items-center"
+        style={{ height: "100vh" }}
+      >
         <div className="spinner-border text-primary" role="status">
           <span className="visually-hidden">Loading...</span>
         </div>
@@ -286,15 +355,13 @@ const BookingCheckPage = () => {
                 <div className="stay-info mb-2">
                   <div className="d-flex justify-content-between mb-2">
                     <span>Total length of stay:</span>
-                    <span className="fw-bold">
-                      {numberOfDays} night
-                    </span>{" "}
+                    <span className="fw-bold">{numberOfDays} night</span>{" "}
                   </div>
                   <div className="d-flex justify-content-between mb-3">
                     <span>Total number of people:</span>
                     <span className="fw-bold">
-                      {searchInfo.adults} Adults -{" "}
-                      {searchInfo.childrens} Childrens
+                      {searchInfo.adults} Adults - {searchInfo.childrens}{" "}
+                      Childrens
                     </span>
                   </div>
                 </div>
@@ -320,7 +387,9 @@ const BookingCheckPage = () => {
                         {amount} x {room.name} ({numberOfDays} days):
                       </span>
                       <span className="fw-bold">
-                        {Utils.formatCurrency(room.price * amount * numberOfDays)}
+                        {Utils.formatCurrency(
+                          room.price * amount * numberOfDays
+                        )}
                       </span>
                     </div>
                   ))}
@@ -328,7 +397,7 @@ const BookingCheckPage = () => {
                   <div className="small mb-3">
                     <a
                       className="text-blue text-decoration-none"
-                      style={{cursor: 'pointer'}}
+                      style={{ cursor: "pointer" }}
                       onClick={handleBackToHomeDetail}
                     >
                       Change your selection
@@ -338,44 +407,35 @@ const BookingCheckPage = () => {
 
                 {/* Selected Services Section */}
                 {selectedServices.length > 0 && (
-                  <div className="selected-services" style={{ marginBottom: "1rem" }}>
-                    <h5 className="mb-4">Selected Services</h5>
+                  <div className="selected-services mb-2">
+                    <h5 className="mb-3">Selected Services</h5>
+
                     {selectedServices.map((service) => {
                       const selectedDates = service.selectedDates || [];
-                      const serviceQuantity = service.quantity * selectedDates.length;
+                      const serviceQuantity =
+                        service.quantity * selectedDates.length;
                       const serviceTotal = service.price * serviceQuantity;
 
                       return (
-                        <div key={service._id} className="mb-3">
-                          <div className="d-flex justify-content-between align-items-center mb-2">
-                            <span>
-                              {service.name} ({service.type}) x {serviceQuantity}:
-                              <br />
-                              <small className="text-white-50">
-                                ({service.quantity} {service.type} x {selectedDates.length} days)
-                              </small>
-                            </span>
-                            <span className="fw-bold">
-                              {Utils.formatCurrency(serviceTotal)}
-                            </span>
-                          </div>
-                          {selectedDates.length > 0 && (
-                            <div className="small text-white-50 mb-2">
-                              Selected dates: {selectedDates.map(date => 
-                                new Date(date).toLocaleDateString()
-                              ).join(', ')}
-                            </div>
-                          )}
-                          <div className="small text-white-50 mb-2">
-                            Price per {service.type}: {Utils.formatCurrency(service.price)}
-                          </div>
+                        <div
+                          key={service._id}
+                          className="d-flex justify-content-between align-items-center mb-1"
+                        >
+                          <span>
+                            {service.quantity} x {service.name} (
+                            {selectedDates.length} days):
+                          </span>
+                          <span className="fw-bold">
+                            {Utils.formatCurrency(serviceTotal)}
+                          </span>
                         </div>
                       );
                     })}
-                    <div className="small mt-3">
+
+                    <div className="small mb-3">
                       <a
                         className="text-blue text-decoration-none"
-                        style={{cursor: 'pointer'}}
+                        style={{ cursor: "pointer" }}
                         onClick={() => {
                           dispatch({
                             type: SearchActions.SAVE_SELECTED_ROOMS,
@@ -388,7 +448,7 @@ const BookingCheckPage = () => {
                           navigate(-1);
                         }}
                       >
-                        Change your service
+                        Change your selection
                       </a>
                     </div>
                   </div>
@@ -406,14 +466,19 @@ const BookingCheckPage = () => {
                 <div className="total-price">
                   <div className="d-flex justify-content-between align-items-center">
                     <h5 className="text-danger mb-0">
-                      Total: {Utils.formatCurrency(
-                        selectedRooms.reduce((total, { room, amount }) => 
-                          total + room.price * amount * numberOfDays, 0) +
-                        selectedServices.reduce((total, service) => {
-                          const selectedDates = service.selectedDates || [];
-                          const serviceQuantity = service.quantity * selectedDates.length;
-                          return total + (service.price * serviceQuantity);
-                        }, 0)
+                      Total:{" "}
+                      {Utils.formatCurrency(
+                        selectedRooms.reduce(
+                          (total, { room, amount }) =>
+                            total + room.price * amount * numberOfDays,
+                          0
+                        ) +
+                          selectedServices.reduce((total, service) => {
+                            const selectedDates = service.selectedDates || [];
+                            const serviceQuantity =
+                              service.quantity * selectedDates.length;
+                            return total + service.price * serviceQuantity;
+                          }, 0)
                       )}
                     </h5>
                   </div>
@@ -531,7 +596,7 @@ const BookingCheckPage = () => {
           </Row>
         </Container>
         <div>
-          <ChatBox/>
+          <ChatBox />
         </div>
       </div>
       <Footer />

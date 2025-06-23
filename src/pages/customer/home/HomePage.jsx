@@ -141,7 +141,7 @@ const childrenOptions = Array.from({ length: 11 }, (_, i) => ({
   value: i,
   label: `${i} Childrens`,
 }));
-
+// search component
 export const SearchBar = () => {
   const navigate = useNavigate();
   const hotels = useAppSelector((state) => state.hotel.hotels);
@@ -416,7 +416,7 @@ export const SearchBar = () => {
                       }}
                     >
                       <Image
-                        src={hotel.images?.[0] || "/placeholder.svg"}
+                        src={hotel.images?.[0].url || "/placeholder.svg"}
                         alt={hotel.hotelName}
                         style={{
                           width: "48px",
@@ -694,7 +694,7 @@ function OtherHotels() {
                     <></>
                   )}
                   <Image
-                    src={hotel.images?.[0] || "/placeholder.svg"}
+                    src={hotel.images?.[0].url || "/placeholder.svg"}
                     alt="Hotel"
                     style={{
                       width: "100%",

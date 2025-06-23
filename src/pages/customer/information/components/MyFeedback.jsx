@@ -84,7 +84,7 @@ const MyFeedback = () => {
   useEffect(() => {
     fetchUserFeedbacks()
   }, [dispatch, sortOption, starFilter])
-
+// view feedback
   const fetchUserFeedbacks = () => {
     setLoading(true)
     dispatch({
@@ -229,6 +229,7 @@ const MyFeedback = () => {
   }
 
   // Function to confirm deletion
+  // delete feedback
   const confirmDeleteFeedback = () => {
     dispatch({
       type: FeedbackActions.DELETE_FEEDBACK,
@@ -269,7 +270,7 @@ const MyFeedback = () => {
       showToast.warning("Comment cannot be empty")
       return
     }
-
+// update feedback in the  store
     dispatch({
       type: FeedbackActions.UPDATE_FEEDBACK,
       payload: {
@@ -419,7 +420,7 @@ const MyFeedback = () => {
                       <Col xs={4}>
                         <img
                           src={
-                            feedback.hotel?.images?.[0] ||
+                            feedback.hotel?.images?.[0].url ||
                             "https://via.placeholder.com/120x120?text=Hotel" ||
                             "/placeholder.svg" ||
                             "/placeholder.svg"
@@ -616,7 +617,7 @@ const MyFeedback = () => {
                   <div className="mb-3">
                     <img
                       src={
-                        selectedFeedback.hotel?.images?.[0] ||
+                        selectedFeedback.hotel?.images?.[0].url ||
                         "https://via.placeholder.com/300x200?text=Hotel" ||
                         "/placeholder.svg" ||
                         "/placeholder.svg"
@@ -752,7 +753,7 @@ const MyFeedback = () => {
         onHide={() => setShowAcceptModal(false)}
         onConfirm={confirmDeleteFeedback}
         title="Confirm Delete"
-        message="Are you sure you want to delete your feedback in list my feedback?"
+        message="Do you really want to delete your feedback from your list?"
         confirmButtonText="Accept"
         type="danger"
       />
