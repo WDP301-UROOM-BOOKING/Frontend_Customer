@@ -49,6 +49,7 @@ const BookingHistory = () => {
     Number(page) == 0 ? 1 : Number(page)
   );
   console.log("activePage: ", activeFilter);
+  const [refundAmount, setRefundAmount] = useState(0);
   const [itemsPerPage, setItemsPerPage] = useState(3); // 3 columns x 2 rows = 6 items per page
   const [totalPages, setTotalPages] = useState(1);
   const [showModal, setShowModal] = useState(false);
@@ -283,7 +284,7 @@ const BookingHistory = () => {
       try {
         const response = await Factories1.create_refunding_reservation(
           id,
-          Utils.calculateTotalPrice(selectedReservation?.rooms),
+          refundAmount,
           accountHolderName,
           accountNumber,
           bankName
@@ -707,6 +708,7 @@ const BookingHistory = () => {
 
       <ToastProvider />
       <CancelReservationModal
+        setRefundAmount={setRefundAmount}
         selectedReservation={selectedReservation}
         refundAmount={
           Utils.calculateTotalPrice(selectedReservation?.rooms) ?? 0
@@ -728,7 +730,9 @@ const BookingHistory = () => {
         onHide={() => setShowCancelModal(false)}
         onConfirm={async () => {
           try {
-            const response = await Factories.cancel_payment(selectedReservation.id);
+            const response = await Factories.cancel_payment(
+              selectedReservation.id
+            );
             if (response?.status === 200) {
               console.log("Response: ", response);
               showToast.success("Cancel reservation successfully !!!");

@@ -807,7 +807,7 @@ const HotelSearchPage = () => {
                               <img
                                 src={
                                   inforHotel.images
-                                    ? inforHotel.images[0]
+                                    ? inforHotel.images[0].url
                                     : "/placeholder.svg"
                                 }
                                 alt={hotel.name || "Unnamed Hotel"}

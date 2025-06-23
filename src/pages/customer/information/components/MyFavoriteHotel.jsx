@@ -300,7 +300,7 @@ const MyFavoriteHotel = () => {
                       variant="top"
                       src={
                         hotel.hotel.images && hotel.hotel.images.length > 0
-                          ? hotel.hotel.images[0]
+                          ? hotel.hotel.images[0].url
                           : "/placeholder.svg?height=200&width=300"
                       }
                       style={{ height: "220px", cursor: "pointer" }}

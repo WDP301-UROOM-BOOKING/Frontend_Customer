@@ -2,7 +2,7 @@ import { Modal, Button } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
 import Utils from "../../../../utils/Utils";
 import { Form, Badge, Row, Col } from "react-bootstrap";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import ConfirmationModal from "@components/ConfirmationModal";
 
 // Combined component with inline styles
@@ -18,14 +18,10 @@ function CancelReservationModal({
   setAccountHolderName,
   setAccountNumber,
   setBankName,
+  setRefundAmount,
 }) {
   const [showModal, setShowModal] = useState(show);
-  /*************  ✨ Windsurf Command ⭐  *************/
-  /**
-   * T nh s  s ng cho t i ng y nh n ph ng (check-in)
-   * @returns {number|null} S  s ng cho t i ng y nh n ph ng, ho c null n u d li u kh ng h p l
-   */
-  /*******  9a4d7a03-50c9-49c9-930e-a4c910903924  *******/
+
   const calculateDaysUntilCheckIn = () => {
     if (!selectedReservation?.checkIn) {
       return null; // hoặc return 0 tùy logic bạn muốn xử lý
@@ -102,6 +98,11 @@ function CancelReservationModal({
   };
 
   const refundPolicy = calculateRefundPolicy();
+  useEffect(() => {
+    const refundPolicyTest = calculateRefundPolicy();
+    const refundAmountValue = refundPolicyTest.refundAmount;
+    setRefundAmount(refundAmountValue);
+  }, []);
   return (
     <>
       {/* CSS Styles */}

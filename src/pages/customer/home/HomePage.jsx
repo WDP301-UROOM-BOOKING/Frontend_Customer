@@ -415,7 +415,7 @@ export const SearchBar = () => {
                       }}
                     >
                       <Image
-                        src={hotel.images?.[0] || "/placeholder.svg"}
+                        src={hotel.images?.[0].url || "/placeholder.svg"}
                         alt={hotel.hotelName}
                         style={{
                           width: "48px",
@@ -693,7 +693,7 @@ function OtherHotels() {
                     <></>
                   )}
                   <Image
-                    src={hotel.images?.[0] || "/placeholder.svg"}
+                    src={hotel.images?.[0].url || "/placeholder.svg"}
                     alt="Hotel"
                     style={{
                       width: "100%",
