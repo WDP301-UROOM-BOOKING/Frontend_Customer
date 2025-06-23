@@ -420,7 +420,7 @@ const MyFeedback = () => {
                       <Col xs={4}>
                         <img
                           src={
-                            feedback.hotel?.images?.[0] ||
+                            feedback.hotel?.images?.[0].url ||
                             "https://via.placeholder.com/120x120?text=Hotel" ||
                             "/placeholder.svg" ||
                             "/placeholder.svg"
@@ -617,7 +617,7 @@ const MyFeedback = () => {
                   <div className="mb-3">
                     <img
                       src={
-                        selectedFeedback.hotel?.images?.[0] ||
+                        selectedFeedback.hotel?.images?.[0].url ||
                         "https://via.placeholder.com/300x200?text=Hotel" ||
                         "/placeholder.svg" ||
                         "/placeholder.svg"

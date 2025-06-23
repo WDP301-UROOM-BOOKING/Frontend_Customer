@@ -102,9 +102,15 @@ export default function HotelDetailPage() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const Auth = useAppSelector((state) => state.Auth.Auth);
-  const SearchInformation = useAppSelector((state) => state.Search.SearchInformation);
-  const selectedRoomsTemps = useAppSelector((state) => state.Search.selectedRooms);
-  const selectedServicesFromRedux = useAppSelector((state) => state.Search.selectedServices);
+  const SearchInformation = useAppSelector(
+    (state) => state.Search.SearchInformation
+  );
+  const selectedRoomsTemps = useAppSelector(
+    (state) => state.Search.selectedRooms
+  );
+  const selectedServicesFromRedux = useAppSelector(
+    (state) => state.Search.selectedServices
+  );
 
   // State variables
   const [showModalStatusBooking, setShowModalStatusBooking] = useState(false);
@@ -137,7 +143,9 @@ export default function HotelDetailPage() {
   const [showModal, setShowModal] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [checkinDate, setCheckinDate] = useState(SearchInformation.checkinDate);
-  const [checkoutDate, setCheckoutDate] = useState(SearchInformation.checkoutDate);
+  const [checkoutDate, setCheckoutDate] = useState(
+    SearchInformation.checkoutDate
+  );
   const [selectedAdults, setSelectedAdults] = useState(
     adultsOptions.find((option) => option.value === SearchInformation.adults) ||
       adultsOptions[0]
@@ -164,22 +172,24 @@ export default function HotelDetailPage() {
       handleBackToBooking();
     };
 
-    window.addEventListener('popstate', handlePopState);
+    window.addEventListener("popstate", handlePopState);
     return () => {
-      window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener("popstate", handlePopState);
     };
   }, []);
 
   // Add function to handle back navigation
   const handleBackToBooking = () => {
     // Get the stack
-    const bookingStack = JSON.parse(sessionStorage.getItem('bookingStack') || '[]');
-    
+    const bookingStack = JSON.parse(
+      sessionStorage.getItem("bookingStack") || "[]"
+    );
+
     // If stack is not empty, pop the last item
     if (bookingStack.length > 0) {
       const lastBooking = bookingStack.pop();
-      sessionStorage.setItem('bookingStack', JSON.stringify(bookingStack));
-      
+      sessionStorage.setItem("bookingStack", JSON.stringify(bookingStack));
+
       // Update Redux store
       dispatch({
         type: SearchActions.SAVE_SELECTED_ROOMS,
@@ -188,12 +198,12 @@ export default function HotelDetailPage() {
           selectedServices: lastBooking.selectedServices,
           hotelDetail: {
             ...lastBooking.hotelDetail,
-            star: lastBooking.hotelDetail.star || 0 // Ensure star property exists
+            star: lastBooking.hotelDetail.star || 0, // Ensure star property exists
           },
         },
       });
     }
-    
+
     navigate(Routers.BookingCheckPage);
   };
 
@@ -306,7 +316,7 @@ export default function HotelDetailPage() {
   const handleSearchRoom = () => {
     const adults = selectedAdults ? selectedAdults.value : 1;
     const childrens = selectedChildren ? selectedChildren.value : 0;
-    
+
     // Update search information with new dates
     const SearchInformationTemp = {
       address: SearchInformation.address,
@@ -319,17 +329,17 @@ export default function HotelDetailPage() {
     // Save new search information
     dispatch({
       type: SearchActions.SAVE_SEARCH,
-      payload: { SearchInformation: SearchInformationTemp }
+      payload: { SearchInformation: SearchInformationTemp },
     });
 
     // Reset selected rooms and services
     dispatch({
       type: SearchActions.SAVE_SELECTED_ROOMS,
-      payload: { 
+      payload: {
         selectedRooms: [],
         selectedServices: [],
-        hotelDetail: hotelDetail
-      }
+        hotelDetail: hotelDetail,
+      },
     });
 
     // Reset local state
@@ -611,15 +621,15 @@ export default function HotelDetailPage() {
     if (selectedRoomsTemps && selectedRoomsTemps.length > 0) {
       setSelectedRooms(selectedRoomsTemps);
     }
-    
+
     // Restore selected services from Redux
     if (selectedServicesFromRedux && selectedServicesFromRedux.length > 0) {
       setSelectedServices(selectedServicesFromRedux);
-      
+
       // Restore service quantities and dates
       const quantities = {};
       const dates = {};
-      selectedServicesFromRedux.forEach(service => {
+      selectedServicesFromRedux.forEach((service) => {
         quantities[service._id] = service.quantity;
         dates[service._id] = service.selectedDates;
       });
@@ -651,7 +661,7 @@ export default function HotelDetailPage() {
         // Add service to selected services with default quantity 1
         setServiceQuantities((prev) => ({
           ...prev,
-          [service._id]: 1
+          [service._id]: 1,
         }));
         return [...prev, service];
       }
@@ -661,10 +671,10 @@ export default function HotelDetailPage() {
   // Add this function to handle service quantity changes
   const handleServiceQuantityChange = (service, amount) => {
     if (amount < 1) return;
-    
+
     setServiceQuantities((prev) => ({
       ...prev,
-      [service._id]: amount
+      [service._id]: amount,
     }));
   };
 
@@ -685,16 +695,16 @@ export default function HotelDetailPage() {
     setServiceSelectedDates((prev) => {
       const currentDates = prev[service._id] || [];
       const dateStr = date.toISOString();
-      
+
       if (currentDates.includes(dateStr)) {
         return {
           ...prev,
-          [service._id]: currentDates.filter(d => d !== dateStr)
+          [service._id]: currentDates.filter((d) => d !== dateStr),
         };
       } else {
         return {
           ...prev,
-          [service._id]: [...currentDates, dateStr]
+          [service._id]: [...currentDates, dateStr],
         };
       }
     });
@@ -712,66 +722,83 @@ export default function HotelDetailPage() {
 
   if (!hotelDetail) {
     return (
-      <div className="loading-container" style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        height: "100vh",
-        backgroundColor: "#f8f9fa",
-      }}>
-        <div className="loading-animation" style={{
-          position: "relative",
-          width: "80px",
-          height: "80px",
-          marginBottom: "20px",
-        }}>
-          <div style={{
-            position: "absolute",
-            width: "64px",
-            height: "64px",
-            border: "8px solid #e0e0e0",
-            borderRadius: "50%",
-            animation: "spin 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite",
-            borderColor: "#1a2b49 transparent transparent transparent",
-          }}></div>
-          <div style={{
-            position: "absolute",
-            width: "64px",
-            height: "64px",
-            border: "8px solid #e0e0e0",
-            borderRadius: "50%",
-            animation: "spin 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite",
-            borderColor: "transparent #1a2b49 transparent transparent",
-            animationDelay: "-0.45s",
-          }}></div>
-          <div style={{
-            position: "absolute",
-            width: "64px",
-            height: "64px",
-            border: "8px solid #e0e0e0",
-            borderRadius: "50%",
-            animation: "spin 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite",
-            borderColor: "transparent transparent #1a2b49 transparent",
-            animationDelay: "-0.3s",
-          }}></div>
-          <div style={{
-            position: "absolute",
-            width: "64px",
-            height: "64px",
-            border: "8px solid #e0e0e0",
-            borderRadius: "50%",
-            animation: "spin 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite",
-            borderColor: "transparent transparent transparent #1a2b49",
-            animationDelay: "-0.15s",
-          }}></div>
+      <div
+        className="loading-container"
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          height: "100vh",
+          backgroundColor: "#f8f9fa",
+        }}
+      >
+        <div
+          className="loading-animation"
+          style={{
+            position: "relative",
+            width: "80px",
+            height: "80px",
+            marginBottom: "20px",
+          }}
+        >
+          <div
+            style={{
+              position: "absolute",
+              width: "64px",
+              height: "64px",
+              border: "8px solid #e0e0e0",
+              borderRadius: "50%",
+              animation: "spin 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite",
+              borderColor: "#1a2b49 transparent transparent transparent",
+            }}
+          ></div>
+          <div
+            style={{
+              position: "absolute",
+              width: "64px",
+              height: "64px",
+              border: "8px solid #e0e0e0",
+              borderRadius: "50%",
+              animation: "spin 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite",
+              borderColor: "transparent #1a2b49 transparent transparent",
+              animationDelay: "-0.45s",
+            }}
+          ></div>
+          <div
+            style={{
+              position: "absolute",
+              width: "64px",
+              height: "64px",
+              border: "8px solid #e0e0e0",
+              borderRadius: "50%",
+              animation: "spin 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite",
+              borderColor: "transparent transparent #1a2b49 transparent",
+              animationDelay: "-0.3s",
+            }}
+          ></div>
+          <div
+            style={{
+              position: "absolute",
+              width: "64px",
+              height: "64px",
+              border: "8px solid #e0e0e0",
+              borderRadius: "50%",
+              animation: "spin 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite",
+              borderColor: "transparent transparent transparent #1a2b49",
+              animationDelay: "-0.15s",
+            }}
+          ></div>
         </div>
-        <div className="loading-text" style={{
-          fontSize: "18px",
-          fontWeight: "500",
-          color: "#1a2b49",
-          textAlign: "center",
-        }}>
+        <div
+          className="loading-text"
+          style={{
+            fontSize: "18px",
+            fontWeight: "500",
+            color: "#1a2b49",
+            textAlign: "center",
+          }}
+        >
           <p>Loading your perfect stay...</p>
           <p style={{ fontSize: "14px", color: "#6c757d", marginTop: "5px" }}>
             Please wait while we prepare the best offers for you
@@ -820,67 +847,85 @@ export default function HotelDetailPage() {
     }
 
     // Validate service dates
-    const invalidServices = selectedServices.filter(service => {
+    const invalidServices = selectedServices.filter((service) => {
       const selectedDates = serviceSelectedDates[service._id] || [];
       return selectedDates.length === 0;
     });
 
     if (invalidServices.length > 0) {
-      setErrorMessage(`Please select dates for the following services: ${invalidServices.map(s => s.name).join(', ')}`);
+      setErrorMessage(
+        `Please select dates for the following services: ${invalidServices
+          .map((s) => s.name)
+          .join(", ")}`
+      );
       setShowModal(true);
       return;
     }
-
-    if (hotelDetail.ownerStatus !== "ACTIVE") {
-      setShowModalStatusBooking(true);
-      return;
-    }
-
-    // Prepare services data with quantities and dates
-    const servicesWithDetails = selectedServices.map(service => ({
-      ...service,
-      quantity: serviceQuantities[service._id] || 1,
-      selectedDates: serviceSelectedDates[service._id] || []
-    }));
-
-    // Save booking data to sessionStorage stack
-    const bookingData = {
-      selectedRooms: selectedRooms,
-      selectedServices: servicesWithDetails,
-      hotelDetail: {
-        ...hotelDetail,
-        star: hotelDetail.star || 0 // Ensure star property exists
-      },
-      searchInfo: {
-        checkinDate,
-        checkoutDate,
-        adults: selectedAdults.value,
-        childrens: selectedChildren.value
-      }
-    };
-
-    // Get existing stack or initialize new one
-    const bookingStack = JSON.parse(sessionStorage.getItem('bookingStack') || '[]');
-    bookingStack.push(bookingData);
-    sessionStorage.setItem('bookingStack', JSON.stringify(bookingStack));
-
+    let status = "";
     dispatch({
-      type: SearchActions.SAVE_SELECTED_ROOMS,
+      type: HotelActions.FETCH_DETAIL_HOTEL,
       payload: {
-        selectedRooms: selectedRooms,
-        selectedServices: servicesWithDetails,
-        hotelDetail: {
-          ...hotelDetail,
-          star: hotelDetail.star || 0 // Ensure star property exists
+        hotelId,
+        userId: Auth._id,
+        onSuccess: (hotel) => {
+          console.log("Hotel detail fetched successfully:", hotel);
+          if (hotel.ownerStatus === "ACTIVE") {
+            // Prepare services data with quantities and dates
+            const servicesWithDetails = selectedServices.map((service) => ({
+              ...service,
+              quantity: serviceQuantities[service._id] || 1,
+              selectedDates: serviceSelectedDates[service._id] || [],
+            }));
+
+            // Save booking data to sessionStorage stack
+            const bookingData = {
+              selectedRooms: selectedRooms,
+              selectedServices: servicesWithDetails,
+              hotelDetail: {
+                ...hotelDetail,
+                star: hotelDetail.star || 0, // Ensure star property exists
+              },
+              searchInfo: {
+                checkinDate,
+                checkoutDate,
+                adults: selectedAdults.value,
+                childrens: selectedChildren.value,
+              },
+            };
+
+            // Get existing stack or initialize new one
+            const bookingStack = JSON.parse(
+              sessionStorage.getItem("bookingStack") || "[]"
+            );
+            bookingStack.push(bookingData);
+            sessionStorage.setItem(
+              "bookingStack",
+              JSON.stringify(bookingStack)
+            );
+
+            dispatch({
+              type: SearchActions.SAVE_SELECTED_ROOMS,
+              payload: {
+                selectedRooms: selectedRooms,
+                selectedServices: servicesWithDetails,
+                hotelDetail: {
+                  ...hotelDetail,
+                  star: hotelDetail.star || 0, // Ensure star property exists
+                },
+              },
+            });
+
+            if (Auth._id !== -1) {
+              navigate(Routers.BookingCheckPage);
+            } else {
+              navigate(Routers.LoginPage);
+            }
+          }else{
+            setShowModalStatusBooking(true);
+          }
         },
       },
     });
-
-    if (Auth._id !== -1) {
-      navigate(Routers.BookingCheckPage);
-    } else {
-      navigate(Routers.LoginPage);
-    }
   };
 
   return (
@@ -909,7 +954,7 @@ export default function HotelDetailPage() {
             }}
             variant="outline-light"
             onClick={() => {
-              if(Auth._id != -1){
+              if (Auth._id != -1) {
                 navigate(Routers.ChatPage, {
                   state: {
                     receiver: {
@@ -918,7 +963,7 @@ export default function HotelDetailPage() {
                     },
                   },
                 });
-              }else{
+              } else {
                 navigate(Routers.LoginPage);
               }
             }}
@@ -959,7 +1004,7 @@ export default function HotelDetailPage() {
             <Col lg={6}>
               <div className="main-image-container">
                 <img
-                  src={mainImage || "https://via.placeholder.com/600x400"}
+                  src={mainImage.url || "https://via.placeholder.com/600x400"}
                   alt="Main Room"
                   className="main-image"
                   style={{
@@ -983,7 +1028,7 @@ export default function HotelDetailPage() {
                       return (
                         <img
                           key={actualIndex}
-                          src={image || "/placeholder.svg"}
+                          src={image.url || "/placeholder.svg"}
                           alt={`Room ${actualIndex + 1}`}
                           className={`thumbnail ${
                             mainImage === image ? "active" : ""
@@ -1027,7 +1072,11 @@ export default function HotelDetailPage() {
                       setShowModalMap(true);
                     }}
                     className="text-primary"
-                    style={{ cursor: "pointer", fontSize: "14px", fontWeight: '500'}}
+                    style={{
+                      cursor: "pointer",
+                      fontSize: "14px",
+                      fontWeight: "500",
+                    }}
                   >
                     Show on map
                   </a>
@@ -1057,7 +1106,8 @@ export default function HotelDetailPage() {
                 <h3 style={{ fontWeight: "bold", marginTop: "-10px" }}>
                   Contact Hotel:
                 </h3>
-                <p>Phone Number: {hotelDetail.phoneNumber}
+                <p>
+                  Phone Number: {hotelDetail.phoneNumber}
                   <br></br>
                   Email: {hotelDetail.email}
                 </p>
@@ -1287,7 +1337,10 @@ export default function HotelDetailPage() {
                 >
                   <span className="visually-hidden">Loading...</span>
                 </Spinner>
-                <p className="mt-3" style={{ color: "#666", fontSize: "1.1rem" }}>
+                <p
+                  className="mt-3"
+                  style={{ color: "#666", fontSize: "1.1rem" }}
+                >
                   Loading available rooms...
                 </p>
               </div>
@@ -1365,10 +1418,12 @@ export default function HotelDetailPage() {
                           className="shadow-sm border-0 h-100 room-card"
                           style={{
                             borderRadius: "15px",
-                            transition: "transform 0.3s ease, box-shadow 0.3s ease",
+                            transition:
+                              "transform 0.3s ease, box-shadow 0.3s ease",
                           }}
                           onMouseEnter={(e) => {
-                            e.currentTarget.style.transform = "translateY(-5px)";
+                            e.currentTarget.style.transform =
+                              "translateY(-5px)";
                             e.currentTarget.style.boxShadow =
                               "0 8px 16px rgba(0,0,0,0.1)";
                           }}
@@ -1402,7 +1457,8 @@ export default function HotelDetailPage() {
                                 transition: "transform 0.3s ease",
                               }}
                               onMouseOver={(e) =>
-                                (e.currentTarget.style.transform = "scale(1.02)")
+                                (e.currentTarget.style.transform =
+                                  "scale(1.02)")
                               }
                               onMouseOut={(e) =>
                                 (e.currentTarget.style.transform = "scale(1)")
@@ -1413,7 +1469,9 @@ export default function HotelDetailPage() {
                           <Card.Body className="d-flex flex-column justify-content-between p-3">
                             <div>
                               <Card.Title
-                                onClick={() => handleRoomClick(room.id || room._id)}
+                                onClick={() =>
+                                  handleRoomClick(room.id || room._id)
+                                }
                                 style={{
                                   fontSize: "1.25rem",
                                   fontWeight: 700,
@@ -1433,7 +1491,8 @@ export default function HotelDetailPage() {
                                       borderRadius: "20px",
                                     }}
                                   >
-                                    {getRoomAmount(room._id || room.id)} selected
+                                    {getRoomAmount(room._id || room.id)}{" "}
+                                    selected
                                   </span>
                                 )}
                               </Card.Title>
@@ -1447,12 +1506,18 @@ export default function HotelDetailPage() {
 
                               <div
                                 className="text-primary fw-bold"
-                                style={{ fontSize: "1.4rem", marginBottom: "8px" }}
+                                style={{
+                                  fontSize: "1.4rem",
+                                  marginBottom: "8px",
+                                }}
                               >
                                 {Utils.formatCurrency(room.price)}
                                 <span
                                   className="text-muted"
-                                  style={{ fontSize: "0.85rem", marginLeft: "4px" }}
+                                  style={{
+                                    fontSize: "0.85rem",
+                                    marginLeft: "4px",
+                                  }}
                                 >
                                   / Day
                                 </span>
@@ -1468,8 +1533,8 @@ export default function HotelDetailPage() {
                                     marginBottom: "10px",
                                   }}
                                 >
-                                  Only {room.availableQuantity} rooms left for this
-                                  room type!
+                                  Only {room.availableQuantity} rooms left for
+                                  this room type!
                                 </div>
                               ) : (
                                 <div
@@ -1479,14 +1544,17 @@ export default function HotelDetailPage() {
                                     marginBottom: "10px",
                                   }}
                                 >
-                                  Have {room.availableQuantity} rooms left for this
-                                  room type!
+                                  Have {room.availableQuantity} rooms left for
+                                  this room type!
                                 </div>
                               )}
                               <div className="mt-2 d-flex justify-content-between align-items-center">
                                 <span
                                   className="text-muted"
-                                  style={{ fontSize: "0.9rem", fontWeight: 600 }}
+                                  style={{
+                                    fontSize: "0.9rem",
+                                    fontWeight: 600,
+                                  }}
                                 >
                                   Amount
                                 </span>
@@ -1497,7 +1565,10 @@ export default function HotelDetailPage() {
                                     room._id || room.id
                                   )}
                                   onChange={(e) =>
-                                    handleAmountChange(room, Number(e.target.value))
+                                    handleAmountChange(
+                                      room,
+                                      Number(e.target.value)
+                                    )
                                   }
                                 >
                                   {Array.from(
@@ -1523,103 +1594,126 @@ export default function HotelDetailPage() {
         )}
 
         {/* Only show Services section if there are services available */}
-        {hotelDetail?.services && hotelDetail.services.filter(service => service.statusActive === "ACTIVE").length > 0 && (
-          <Row className="mt-4 mb-4">
-            <h3
-              className="text-center text-uppercase fw-bold mb-5"
-              style={{ color: "#1a2b49", fontSize: "2.5rem" }}
-            >
-              Services
-            </h3>
-            <Col>
-              <Card className="p-4">
-                <div className="services-container mt-4">
-                  <div className="row">
-                    {hotelDetail?.services?.map((service) => {
-                      // Only show active services
-                      if (service.statusActive !== "ACTIVE") return null;
-                      
-                      const isSelected = selectedServices.some((s) => s._id === service._id);
-                      const quantity = serviceQuantities[service._id] || 1;
-                      const selectedDates = serviceSelectedDates[service._id] || [];
-                      
-                      return (
-                        <div key={service._id} className="col-md-4 mb-3">
-                          <div
-                            className={`service-card p-3 ${
-                              isSelected ? "selected" : ""
-                            }`}
-                            style={{
-                              border: "1px solid #ddd",
-                              borderRadius: "8px",
-                              cursor: "pointer",
-                              transition: "all 0.3s ease",
-                              backgroundColor: isSelected ? "#f8f9fa" : "white",
-                              boxShadow: isSelected ? "0 2px 4px rgba(0,0,0,0.1)" : "none"
-                            }}
-                            onClick={() => handleServiceSelection(service)}
-                          >
-                            <h5>{service.name}</h5>
-                            <p>{service.description}</p>
-                            <p className="text-primary fw-bold">
-                              {Utils.formatCurrency(service.price)}/{service.type}
-                            </p>
-                            {isSelected && (
-                              <div className="d-flex align-items-center justify-content-between mt-2">
-                                <div className="d-flex align-items-center">
+        {hotelDetail?.services &&
+          hotelDetail.services.filter(
+            (service) => service.statusActive === "ACTIVE"
+          ).length > 0 && (
+            <Row className="mt-4 mb-4">
+              <h3
+                className="text-center text-uppercase fw-bold mb-5"
+                style={{ color: "#1a2b49", fontSize: "2.5rem" }}
+              >
+                Services
+              </h3>
+              <Col>
+                <Card className="p-4">
+                  <div className="services-container mt-4">
+                    <div className="row">
+                      {hotelDetail?.services?.map((service) => {
+                        // Only show active services
+                        if (service.statusActive !== "ACTIVE") return null;
+
+                        const isSelected = selectedServices.some(
+                          (s) => s._id === service._id
+                        );
+                        const quantity = serviceQuantities[service._id] || 1;
+                        const selectedDates =
+                          serviceSelectedDates[service._id] || [];
+
+                        return (
+                          <div key={service._id} className="col-md-4 mb-3">
+                            <div
+                              className={`service-card p-3 ${
+                                isSelected ? "selected" : ""
+                              }`}
+                              style={{
+                                border: "1px solid #ddd",
+                                borderRadius: "8px",
+                                cursor: "pointer",
+                                transition: "all 0.3s ease",
+                                backgroundColor: isSelected
+                                  ? "#f8f9fa"
+                                  : "white",
+                                boxShadow: isSelected
+                                  ? "0 2px 4px rgba(0,0,0,0.1)"
+                                  : "none",
+                              }}
+                              onClick={() => handleServiceSelection(service)}
+                            >
+                              <h5>{service.name}</h5>
+                              <p>{service.description}</p>
+                              <p className="text-primary fw-bold">
+                                {Utils.formatCurrency(service.price)}/
+                                {service.type}
+                              </p>
+                              {isSelected && (
+                                <div className="d-flex align-items-center justify-content-between mt-2">
+                                  <div className="d-flex align-items-center">
+                                    <button
+                                      className="btn btn-sm btn-outline-primary"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleServiceQuantityChange(
+                                          service,
+                                          quantity - 1
+                                        );
+                                      }}
+                                      disabled={quantity <= 1}
+                                    >
+                                      -
+                                    </button>
+                                    <span className="mx-2">{quantity}</span>
+                                    <button
+                                      className="btn btn-sm btn-outline-primary"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleServiceQuantityChange(
+                                          service,
+                                          quantity + 1
+                                        );
+                                      }}
+                                    >
+                                      +
+                                    </button>
+                                  </div>
                                   <button
-                                    className="btn btn-sm btn-outline-primary"
+                                    className="btn btn-sm btn-outline-secondary"
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      handleServiceQuantityChange(service, quantity - 1);
-                                    }}
-                                    disabled={quantity <= 1}
-                                  >
-                                    -
-                                  </button>
-                                  <span className="mx-2">{quantity}</span>
-                                  <button
-                                    className="btn btn-sm btn-outline-primary"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleServiceQuantityChange(service, quantity + 1);
+                                      handleShowDateSelector(service);
                                     }}
                                   >
-                                    +
+                                    Select Date
                                   </button>
                                 </div>
-                                <button
-                                  className="btn btn-sm btn-outline-secondary"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleShowDateSelector(service);
-                                  }}
-                                >
-                                  Select Date
-                                </button>
-                              </div>
-                            )}
-                            {isSelected && selectedDates.length > 0 && (
-                              <div className="mt-2 small text-muted">
-                                Selected dates: {selectedDates.map(date => 
-                                  new Date(date).toLocaleDateString()
-                                ).join(', ')}
-                              </div>
-                            )}
+                              )}
+                              {isSelected && selectedDates.length > 0 && (
+                                <div className="mt-2 small text-muted">
+                                  Selected dates:{" "}
+                                  {selectedDates
+                                    .map((date) =>
+                                      new Date(date).toLocaleDateString()
+                                    )
+                                    .join(", ")}
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              </Card>
-            </Col>
-          </Row>
-        )}
+                </Card>
+              </Col>
+            </Row>
+          )}
 
         {/* Show Book Now button only if there are rooms or services available */}
-        {((rooms && rooms.length > 0) || 
-          (hotelDetail?.services && hotelDetail.services.filter(service => service.statusActive === "ACTIVE").length > 0)) && (
+        {((rooms && rooms.length > 0) ||
+          (hotelDetail?.services &&
+            hotelDetail.services.filter(
+              (service) => service.statusActive === "ACTIVE"
+            ).length > 0)) && (
           <div className="text-center mt-5">
             <Button
               variant="primary"
@@ -1646,39 +1740,43 @@ export default function HotelDetailPage() {
         )}
 
         {/* Show message when no rooms and no services available */}
-        {(!rooms || rooms.length === 0) && 
-         (!hotelDetail?.services || hotelDetail.services.filter(service => service.statusActive === "ACTIVE").length === 0) && 
-         !searchRoom && (
-          <div className="text-center py-5">
-            <div className="mb-4">
-              <h4 className="text-muted">No Rooms or Services Available</h4>
-              <p className="text-muted">
-                This hotel currently has no available rooms or services for your selected dates.
-                <br />
-                Please try different dates or contact the hotel directly.
-              </p>
-            </div>
-            <Button
-              variant="outline-primary"
-              onClick={() => {
-                if(Auth._id != -1){
-                  navigate(Routers.ChatPage, {
-                    state: {
-                      receiver: {
-                        ...hotelDetail.owner,
-                        ownedHotels: [{ hotelName: hotelDetail.hotelName }],
+        {(!rooms || rooms.length === 0) &&
+          (!hotelDetail?.services ||
+            hotelDetail.services.filter(
+              (service) => service.statusActive === "ACTIVE"
+            ).length === 0) &&
+          !searchRoom && (
+            <div className="text-center py-5">
+              <div className="mb-4">
+                <h4 className="text-muted">No Rooms or Services Available</h4>
+                <p className="text-muted">
+                  This hotel currently has no available rooms or services for
+                  your selected dates.
+                  <br />
+                  Please try different dates or contact the hotel directly.
+                </p>
+              </div>
+              <Button
+                variant="outline-primary"
+                onClick={() => {
+                  if (Auth._id != -1) {
+                    navigate(Routers.ChatPage, {
+                      state: {
+                        receiver: {
+                          ...hotelDetail.owner,
+                          ownedHotels: [{ hotelName: hotelDetail.hotelName }],
+                        },
                       },
-                    },
-                  });
-                }else{
-                  navigate(Routers.LoginPage);
-                }
-              }}
-            >
-              Contact with hotel
-            </Button>
-          </div>
-        )}
+                    });
+                  } else {
+                    navigate(Routers.LoginPage);
+                  }
+                }}
+              >
+                Contact with hotel
+              </Button>
+            </div>
+          )}
 
         {/* Existing error modals */}
         <ErrorModal
@@ -1725,8 +1823,7 @@ export default function HotelDetailPage() {
       </Modal>
       {searchRoom ? (
         <div></div>
-      ) :
-      (
+      ) : (
         <Container className="other-hotels-section position-relative">
           <h1 className="section-title" style={{ fontSize: "2.5rem" }}>
             Special Offers Just For You
@@ -1808,7 +1905,7 @@ export default function HotelDetailPage() {
                         variant="top"
                         src={
                           hotel.hotel.images && hotel.hotel.images.length > 0
-                            ? hotel.hotel.images[0]
+                            ? hotel.hotel.images[0].url
                             : "/images/default-hotel.jpg"
                         }
                         className="hotel-image"
@@ -2318,7 +2415,9 @@ export default function HotelDetailPage() {
                   new Date(SearchInformation.checkoutDate)
                 ).map((date) => {
                   const dateStr = date.toISOString();
-                  const isSelected = (serviceSelectedDates[currentService._id] || []).includes(dateStr);
+                  const isSelected = (
+                    serviceSelectedDates[currentService._id] || []
+                  ).includes(dateStr);
                   return (
                     <div
                       key={dateStr}

@@ -538,7 +538,7 @@ const BookingBill = () => {
                 >
                   <Image
                     src={
-                      hotelDetail?.images?.[0] ||
+                      hotelDetail?.images?.[0].url ||
                       reservationDetail.hotel?.images?.[0] ||
                       "https://cf.bstatic.com/xdata/images/hotel/max1024x768/647144068.jpg?k=acaba5abb30178b9f1c312eb53c94e59996dd9e624bb1835646a2a427cf87f0a&o=&hp=1"
                     }
