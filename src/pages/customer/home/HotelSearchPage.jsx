@@ -475,7 +475,8 @@ const HotelSearchPage = () => {
         backgroundImage: `url(${Banner})`,
         backgroundSize: "cover",
         backgroundPosition: "center",
-        height: "1600px",
+        // height: "1600px",
+        minHeight: "100vh", // ĐẢM BẢO luôn phủ hết màn hình
       }}
     >
       <Header />
@@ -743,8 +744,18 @@ const HotelSearchPage = () => {
                     <div style={{ fontSize: 22, fontWeight: 700, color: "#2563eb" }}>
                       {Math.round(day.temp.day - 273.15)}°C
                     </div>
-                    <div style={{ fontSize: 14, color: "#64748b", minHeight: 24 }}>
-                      {day.weather[0].description.charAt(0).toUpperCase() + day.weather[0].description.slice(1)}
+                    <div style={{ fontSize: 14, color: "#2563eb", fontWeight: 500 }}>
+                      {typeof day.pop !== "undefined" && (
+                        <>
+                          {day.pop >= 0.8
+                            ? (day.rain && day.rain > 5
+                              ? "Khả năng mưa lớn"
+                              : "Khả năng có mưa")
+                            : day.pop <= 0.3
+                              ? "Ít khả năng mưa"
+                              : `Xác suất mưa: ${Math.round(day.pop * 100)}%`}
+                        </>
+                      )}
                     </div>
                     <div style={{ fontSize: 13, color: "#94a3b8" }}>
                       🌡️ {Math.round(day.temp.min - 273.15)}°C - {Math.round(day.temp.max - 273.15)}°C
