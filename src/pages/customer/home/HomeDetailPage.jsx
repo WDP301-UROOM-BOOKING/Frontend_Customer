@@ -60,6 +60,7 @@ import ErrorModal from "@components/ErrorModal";
 import SearchActions from "../../../redux/search/actions";
 import HotelClosedModal from "./components/HotelClosedModal";
 import { ChatBox } from "./HomePage";
+import axios from "axios";
 
 // Options for select inputs
 const adultsOptions = Array.from({ length: 20 }, (_, i) => ({
@@ -148,7 +149,7 @@ export default function HotelDetailPage() {
   );
   const [selectedAdults, setSelectedAdults] = useState(
     adultsOptions.find((option) => option.value === SearchInformation.adults) ||
-      adultsOptions[0]
+    adultsOptions[0]
   );
   const [selectedChildren, setSelectedChildren] = useState(
     childrenOptions.find(
@@ -165,6 +166,52 @@ export default function HotelDetailPage() {
   const [currentService, setCurrentService] = useState(null);
   const [selectedServices, setSelectedServices] = useState([]);
   const [selectedRooms, setSelectedRooms] = useState(selectedRoomsTemps ?? []);
+
+  const OPENWEATHER_API_KEY = process.env.REACT_APP_OPENWEATHER_API_KEY;
+
+  const [weather, setWeather] = useState([]);
+  const [weatherLoading, setWeatherLoading] = useState(false);
+  const [weatherError, setWeatherError] = useState("");
+
+  // Lấy city từ hotelDetail (sau khi fetch xong hotelDetail)
+  useEffect(() => {
+    const cityName = getCityFromAddress(hotelDetail?.address);
+
+    // Chuẩn hóa tên thành phố lớn nếu cần
+    let city = cityName;
+    if (city.includes("Hà Nội")) city = "Hanoi";
+    if (city.includes("Đà Nẵng")) city = "Da Nang";
+    if (city.includes("Hồ Chí Minh")) city = "Ho Chi Minh City";
+
+    if (!city) return;
+
+    const fetchWeather = async () => {
+      setWeatherLoading(true);
+      setWeatherError("");
+      try {
+        const geoUrl = `https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(city)}&limit=1&appid=${OPENWEATHER_API_KEY}`;
+        const geoRes = await axios.get(geoUrl);
+        if (!geoRes.data || geoRes.data.length === 0) throw new Error("Không tìm thấy vị trí thành phố.");
+        const { lat, lon } = geoRes.data[0];
+        const weatherUrl = `https://pro.openweathermap.org/data/2.5/forecast/daily?lat=${lat}&lon=${lon}&cnt=7&appid=${OPENWEATHER_API_KEY}&lang=vi`;
+        const weatherRes = await axios.get(weatherUrl);
+        setWeather(weatherRes.data.list.slice(0, 7));
+      } catch (err) {
+        setWeatherError("Không lấy được dữ liệu thời tiết.");
+        setWeather([]);
+      }
+      setWeatherLoading(false);
+    };
+
+    fetchWeather();
+  }, [hotelDetail?.address]);
+
+  function getCityFromAddress(address) {
+    if (!address) return "";
+    const parts = address.trim().split(/\s+/);
+    if (parts.length < 3) return address;
+    return parts.slice(-3).join(" ");
+  }
 
   // Add event listener for popstate at the top level
   useEffect(() => {
@@ -519,7 +566,7 @@ export default function HotelDetailPage() {
         payload: {
           hotelId,
           onSuccess: () => setIsFavorite(false),
-          onFailed: (msg) => {},
+          onFailed: (msg) => { },
           onError: (error) => console.error(error),
         },
       });
@@ -529,7 +576,7 @@ export default function HotelDetailPage() {
         payload: {
           hotelId,
           onSuccess: () => setIsFavorite(true),
-          onFailed: (msg) => {},
+          onFailed: (msg) => { },
           onError: (error) => console.error(error),
         },
       });
@@ -920,7 +967,7 @@ export default function HotelDetailPage() {
             } else {
               navigate(Routers.LoginPage);
             }
-          }else{
+          } else {
             setShowModalStatusBooking(true);
           }
         },
@@ -974,6 +1021,70 @@ export default function HotelDetailPage() {
       </div>
       {/* Main Content */}
       <Container className="main-content">
+        <div className="mb-4" >
+          <div style={{ marginTop: "32px" }}>
+            <h5>
+              <span role="img" aria-label="weather">🌤️</span> Dự báo thời tiết 7 ngày
+            </h5>
+            {weatherLoading ? (
+              <div>Đang tải thời tiết...</div>
+            ) : weatherError ? (
+              <div className="text-danger">{weatherError}</div>
+            ) : (
+              <div
+                style={{
+                  display: "flex",
+                  gap: 20,
+                  overflowX: "auto",
+                  paddingBottom: 8,
+                  marginTop: 8,
+                }}
+              >
+                {weather.map((day, idx) => (
+                  <div
+                    key={idx}
+                    style={{
+                      minWidth: 160,
+                      background: "linear-gradient(135deg, #e0e7ff 0%, #f8fafc 100%)",
+                      border: "1px solid #dbeafe",
+                      borderRadius: 18,
+                      padding: 18,
+                      textAlign: "center",
+                      boxShadow: "0 2px 12px #e0e7ef",
+                      flex: "0 0 auto",
+                      transition: "transform 0.2s",
+                    }}
+                  >
+                    <div style={{ fontWeight: 700, fontSize: 16, color: "#2563eb" }}>
+                      {new Date(day.dt * 1000).toLocaleDateString("vi-VN", {
+                        weekday: "short",
+                        day: "2-digit",
+                        month: "2-digit",
+                      })}
+                    </div>
+                    <img
+                      src={`https://openweathermap.org/img/wn/${day.weather[0].icon}@2x.png`}
+                      alt={day.weather[0].description}
+                      style={{ width: 60, margin: "8px 0" }}
+                    />
+                    <div style={{ fontSize: 22, fontWeight: 700, color: "#2563eb" }}>
+                      {Math.round(day.temp.day - 273.15)}°C
+                    </div>
+                    <div style={{ fontSize: 14, color: "#64748b", minHeight: 24 }}>
+                      {day.weather[0].description.charAt(0).toUpperCase() + day.weather[0].description.slice(1)}
+                    </div>
+                    <div style={{ fontSize: 14, color: "#2563eb", fontWeight: 500 }}>
+                      ☔ Xác suất mưa: {typeof day.pop !== "undefined" ? Math.round(day.pop * 100) : 0}%
+                    </div>
+                    <div style={{ fontSize: 13, color: "#94a3b8" }}>
+                      🌡️ {Math.round(day.temp.min - 273.15)}°C - {Math.round(day.temp.max - 273.15)}°C
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
         <Card className="content-card">
           <div
             style={{
@@ -1030,9 +1141,8 @@ export default function HotelDetailPage() {
                           key={actualIndex}
                           src={image.url || "/placeholder.svg"}
                           alt={`Room ${actualIndex + 1}`}
-                          className={`thumbnail ${
-                            mainImage === image ? "active" : ""
-                          }`}
+                          className={`thumbnail ${mainImage === image ? "active" : ""
+                            }`}
                           onClick={() =>
                             handleThumbnailClick(image, actualIndex)
                           }
@@ -1457,8 +1567,8 @@ export default function HotelDetailPage() {
                                 transition: "transform 0.3s ease",
                               }}
                               onMouseOver={(e) =>
-                                (e.currentTarget.style.transform =
-                                  "scale(1.02)")
+                              (e.currentTarget.style.transform =
+                                "scale(1.02)")
                               }
                               onMouseOut={(e) =>
                                 (e.currentTarget.style.transform = "scale(1)")
@@ -1623,9 +1733,8 @@ export default function HotelDetailPage() {
                         return (
                           <div key={service._id} className="col-md-4 mb-3">
                             <div
-                              className={`service-card p-3 ${
-                                isSelected ? "selected" : ""
-                              }`}
+                              className={`service-card p-3 ${isSelected ? "selected" : ""
+                                }`}
                               style={{
                                 border: "1px solid #ddd",
                                 borderRadius: "8px",
@@ -1714,30 +1823,30 @@ export default function HotelDetailPage() {
             hotelDetail.services.filter(
               (service) => service.statusActive === "ACTIVE"
             ).length > 0)) && (
-          <div className="text-center mt-5">
-            <Button
-              variant="primary"
-              onClick={handleBookingClick}
-              style={{
-                padding: "0.8rem 4rem",
-                borderRadius: "30px",
-                backgroundColor: "#1a2b49",
-                border: "none",
-                fontSize: "1.1rem",
-                fontWeight: 600,
-                transition: "all 0.3s ease",
-              }}
-              onMouseEnter={(e) =>
-                (e.currentTarget.style.backgroundColor = "#2c4373")
-              }
-              onMouseLeave={(e) =>
-                (e.currentTarget.style.backgroundColor = "#1a2b49")
-              }
-            >
-              Book Now
-            </Button>
-          </div>
-        )}
+            <div className="text-center mt-5">
+              <Button
+                variant="primary"
+                onClick={handleBookingClick}
+                style={{
+                  padding: "0.8rem 4rem",
+                  borderRadius: "30px",
+                  backgroundColor: "#1a2b49",
+                  border: "none",
+                  fontSize: "1.1rem",
+                  fontWeight: 600,
+                  transition: "all 0.3s ease",
+                }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.backgroundColor = "#2c4373")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.backgroundColor = "#1a2b49")
+                }
+              >
+                Book Now
+              </Button>
+            </div>
+          )}
 
         {/* Show message when no rooms and no services available */}
         {(!rooms || rooms.length === 0) &&
@@ -2049,16 +2158,16 @@ export default function HotelDetailPage() {
                     {averageRating === 5
                       ? "Excellent"
                       : averageRating > 4
-                      ? "Good"
-                      : averageRating > 3
-                      ? "Average"
-                      : averageRating > 2
-                      ? "Poor"
-                      : averageRating > 1
-                      ? "Very Poor"
-                      : averageRating == 0
-                      ? "No Average"
-                      : ""}
+                        ? "Good"
+                        : averageRating > 3
+                          ? "Average"
+                          : averageRating > 2
+                            ? "Poor"
+                            : averageRating > 1
+                              ? "Very Poor"
+                              : averageRating == 0
+                                ? "No Average"
+                                : ""}
                   </h2>
 
                   <p
@@ -2421,9 +2530,8 @@ export default function HotelDetailPage() {
                   return (
                     <div
                       key={dateStr}
-                      className={`date-option p-2 border rounded ${
-                        isSelected ? "bg-primary text-white" : ""
-                      }`}
+                      className={`date-option p-2 border rounded ${isSelected ? "bg-primary text-white" : ""
+                        }`}
                       style={{ cursor: "pointer" }}
                       onClick={() => handleDateSelection(currentService, date)}
                     >
