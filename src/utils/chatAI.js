@@ -2,17 +2,6 @@ import axios from "axios";
 
 const GEMINI_API_KEY = process.env.REACT_APP_GEMINI_API_KEY;
 const WEATHER_API_KEY = process.env.REACT_APP_OPENWEATHER_API_KEY;
-export const extractTopHotelRequest = (message) => {
-  const regex = /top\s*(\d+)\s*khách\s*sạn.*?(hà nội|đà nẵng|hồ chí minh|nha trang|đà lạt)/i;
-  const match = message.match(regex);
-  if (match) {
-    return {
-      count: parseInt(match[1]),
-      city: match[2].toLowerCase(),
-    };
-  }
-  return null;
-};
 
 
 export const extractCity = (text) => {
@@ -75,10 +64,11 @@ export const getWeatherForCity = async (city) => {
 
 export const askGemini = async (question, weatherText = "") => {
     const prompt = `
-Người dùng hỏi: "${question}"
-${weatherText ? `\nDự báo thời tiết:\n${weatherText}` : ""}
-
-Trả lời như một chuyên gia du lịch thông minh. Đưa ra gợi ý phù hợp với thời tiết nếu có.
+Bạn là trợ lý du lịch thông minh, thân thiện bằng tiếng Việt.
+Câu hỏi khách hàng: "${question}"
+${weatherText ? `\nThông tin thời tiết liên quan:\n${weatherText}` : ""}
+Nếu có thông tin thời tiết, hãy đưa ra gợi ý phù hợp. Nếu không biết, hãy trả lời lịch sự.
+Không lặp lại thông tin thời tiết đã cung cấp.
 `;
 
     try {
@@ -95,45 +85,4 @@ Trả lời như một chuyên gia du lịch thông minh. Đưa ra gợi ý phù
     } catch (err) {
         return "Lỗi từ AI: Không thể trả lời.";
     }
-};
-export const getTopHotels = (city, count) => {
-    const hotelData = {
-        "đà nẵng": [
-            { name: "Furama Resort", rating: 4.9 },
-            { name: "InterContinental", rating: 4.8 },
-            { name: "Vinpearl Condotel", rating: 4.7 },
-            { name: "Pullman", rating: 4.6 },
-            { name: "Grand Tourane", rating: 4.5 },
-        ],
-        "hà nội": [
-            { name: "Lotte Hotel", rating: 4.9 },
-            { name: "JW Marriott", rating: 4.8 },
-            { name: "Sofitel Metropole", rating: 4.7 },
-        ],
-        "hồ chí minh": [
-            { name: "The Reverie Saigon", rating: 4.9 },
-            { name: "Park Hyatt Saigon", rating: 4.8 },
-            { name: "Caravelle Hotel", rating: 4.7 },
-        ],
-    };
-
-    const hotels = hotelData[city];
-    if (!hotels) return [];
-
-    return hotels.slice(0, count);
-};
-export const getTopHotelsFromServer = async (location, count = 5) => {
-  try {
-    const res = await axios.get(
-      `/api/hotels/get-top-hotel-location?location=${encodeURIComponent(location)}`
-    );
-    const hotels = res.data.hotels || [];
-
-    return hotels.slice(0, count).map((hotel, idx) => {
-      return `${idx + 1}. ${hotel.name} (${hotel.rating ?? "Chưa có đánh giá"}⭐)`;
-    });
-  } catch (error) {
-    console.error("Lỗi lấy top khách sạn:", error);
-    return [];
-  }
 };

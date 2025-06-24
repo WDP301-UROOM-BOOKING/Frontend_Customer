@@ -137,11 +137,15 @@ const ListHotel = ({ address }) => {
 // qaData.js
 const qaData = [
   {
-    questions: ["Ho Chi Minh", "Hotels in Ho Chi Minh", "Ho Chi Minh hotels"],
+    questions: ["Ho Chi Minh", "Hotels in Ho Chi Minh", "Ho Chi Minh hotels","Top 5 khách sạn Hồ Chí Minh"],
     answer: ["ListHotelHoChiMinh"],
   },
   {
-    questions: ["Ha Noi", "Hotels in Ha Noi", "Ha Noi hotels"],
+    questions: ["Da Nang", "Hotels in Da Nang", "Da Nang hotels","Top 5 khách sạn Đà Nẵng"],
+    answer: ["ListHotelDaNang"],
+  },
+  {
+    questions: ["Ha Noi", "Hotels in Ha Noi", "Ha Noi hotels", "Top 5 khách sạn Hà Nội"],
     answer: ["ListHotelHaNoi"],
   },
   {
@@ -190,10 +194,6 @@ const qaData = [
     answer: [
       "I can answer your questions, provide information, and assist you whenever needed.",
     ],
-  },
-  {
-    questions: ["Da Nang", "Hotels in Da Nang", "Da Nang hotels"],
-    answer: ["ListHotelDaNang"],
   },
   {
     questions: [

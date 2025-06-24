@@ -63,6 +63,7 @@ import { useAppSelector, useAppDispatch } from "../../../redux/store";
 import HotelActions from "../../../redux/hotel/actions";
 import RoomActions from "../../../redux/room/actions";
 import Utils from "@utils/Utils";
+import ReactMarkdown from "react-markdown";
 import qaData, {
   CancellationPolicy,
   ChatSupportCard,
@@ -1074,6 +1075,21 @@ function CustomerReviews() {
   );
 }
 
+export const findAnswerFromQA = (message) => {
+  const lowerMsg = message.trim().toLowerCase();
+  for (const qa of qaData) {
+    if (
+      qa.questions.some((q) =>
+        lowerMsg.includes(q.toLowerCase())
+      )
+    ) {
+      // Trả về mảng answer (có thể là text hoặc tên component đặc biệt)
+      return qa.answer;
+    }
+  }
+  return null;
+};
+
 export const ChatBox = () => {
   const dispatch = useDispatch();
   const Messages = useAppSelector((state) => state.ChatBox.Messages);
@@ -1114,24 +1130,42 @@ export const ChatBox = () => {
       setInput("");
 
       setTimeout(async () => {
-        const topHotelRequest = extractTopHotelRequest(userMessage);
-        if (topHotelRequest) {
-          const list = getTopHotels(topHotelRequest.city, topHotelRequest.count);
-          if (list.length > 0) {
-            const formatted = list
-              .map((hotel, idx) => `${idx + 1}. ${hotel.name} (${hotel.rating}⭐)`)
-              .join("\n");
-
-            setMessages((prev) => [...prev, { text: formatted, sender: "bot" }]);
+        // 1. Check FAQ trước
+        const qaAnswers = findAnswerFromQA(userMessage);
+        if (qaAnswers && qaAnswers.length > 0) {
+          for (const ans of qaAnswers) {
+            setMessages((prev) => [...prev, { text: ans, sender: "bot" }]);
             dispatch({
               type: ChatboxActions.ADD_MESSAGE,
               payload: {
-                message: { text: formatted, sender: "bot" },
+                message: { text: ans, sender: "bot" },
               },
             });
-            return; // Không gọi Gemini nếu có kết quả top khách sạn
           }
+          return; // Không xử lý tiếp nếu đã trả lời từ FAQ
         }
+
+        // // 2. Xử lý top khách sạn như cũ
+        // const topHotelRequest = extractTopHotelRequest(userMessage);
+        // if (topHotelRequest) {
+        //   const list = getTopHotels(topHotelRequest.city, topHotelRequest.count);
+        //   if (list.length > 0) {
+        //     const formatted = list
+        //       .map((hotel, idx) => `${idx + 1}. ${hotel.name} (${hotel.rating}⭐)`)
+        //       .join("\n");
+
+        //     setMessages((prev) => [...prev, { text: formatted, sender: "bot" }]);
+        //     dispatch({
+        //       type: ChatboxActions.ADD_MESSAGE,
+        //       payload: {
+        //         message: { text: formatted, sender: "bot" },
+        //       },
+        //     });
+        //     return;
+        //   }
+        // }
+
+        // 3. Xử lý thời tiết và gọi AI như cũ
         const city = extractCity(userMessage);
         let weatherText = "";
         if (city) {
@@ -1141,7 +1175,6 @@ export const ChatBox = () => {
         const reply = await askGemini(userMessage, weatherText);
 
         setMessages((prev) => [...prev, { text: reply, sender: "bot" }]);
-
         dispatch({
           type: ChatboxActions.ADD_MESSAGE,
           payload: {
@@ -1229,7 +1262,7 @@ export const ChatBox = () => {
                   msg.text !== "ListHotelDaNang" &&
                   msg.text !== "ListHotelHoChiMinh" &&
                   msg.text !== "ListHotelHaNoi" &&
-                  msg.text}
+                  <ReactMarkdown>{msg.text}</ReactMarkdown>}
               </div>
             ))}
             <div ref={messagesEndRef} />
