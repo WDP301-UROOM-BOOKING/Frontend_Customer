@@ -158,7 +158,8 @@ const BookingCheckPage = () => {
               hotelId: hotelDetail._id,
               checkOutDate: searchInfo.checkoutDate,
               checkInDate: searchInfo.checkinDate,
-              totalPrice: totalPrice,
+              totalPrice: totalPrice, // giá gốc
+              finalPrice: finalPrice, // giá sau giảm giá
               roomDetails: selectedRooms.map(({ room, amount }) => ({
                 room: {
                   _id: room._id,
@@ -171,6 +172,9 @@ const BookingCheckPage = () => {
                   service.quantity * (service.selectedDates?.length || 0),
                 selectDate: service.selectedDates || [],
               })),
+              // Thêm promotionId và promotionDiscount nếu có
+              ...(promotionId && { promotionId }),
+              ...(promotionDiscount > 0 && { promotionDiscount }),
             };
 
             console.log("params >> ", params);
@@ -535,11 +539,6 @@ const BookingCheckPage = () => {
                       Total: {Utils.formatCurrency(finalPrice)}
                     </h5>
                   </div>
-                  {promotionDiscount > 0 && (
-                    <div className="small text-success">
-                      Discount: -{Utils.formatCurrency(promotionDiscount)}
-                    </div>
-                  )}
                   <div className="small">Includes taxes and fees</div>
                 </div>
               </Card>

@@ -159,7 +159,10 @@
     font-weight: bold;
     background-color: #f8f9fa;
   }
-  
+   .final-row {
+    font-weight: bold;
+    background-color: #f8f9fa;
+  }
   .terms-checkbox {
     margin-bottom: 15px;
   }
