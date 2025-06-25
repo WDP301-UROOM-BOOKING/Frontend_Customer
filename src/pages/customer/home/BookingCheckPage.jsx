@@ -21,8 +21,12 @@ import Utils from "../../../utils/Utils";
 import Factories from "../../../redux/search/factories";
 import { ChatBox } from "./HomePage";
 import SearchActions from "../../../redux/search/actions";
+import HotelActions from "@redux/hotel/actions";
+import HotelClosedModal from "./components/HotelClosedModal";
 
 const BookingCheckPage = () => {
+  const [showModalStatusBooking, setShowModalStatusBooking] = useState(false);
+
   const Auth = useAppSelector((state) => state.Auth.Auth);
   const SearchInformation = useAppSelector(
     (state) => state.Search.SearchInformation
@@ -117,107 +121,91 @@ const BookingCheckPage = () => {
   const [showAcceptModal, setShowAcceptModal] = useState(false);
 
   const createBooking = async () => {
-    const totalRoomPrice = selectedRooms.reduce(
-      (total, { room, amount }) => total + room.price * amount * numberOfDays,
-      0
-    );
+    dispatch({
+      type: HotelActions.FETCH_DETAIL_HOTEL,
+      payload: {
+        hotelId: hotelDetail._id,
+        userId: Auth._id,
+        onSuccess: async (hotel) => {
+          console.log("Hotel detail fetched successfully:", hotel);
+          if (hotel.ownerStatus === "ACTIVE") {
+            const totalRoomPrice = selectedRooms.reduce(
+              (total, { room, amount }) =>
+                total + room.price * amount * numberOfDays,
+              0
+            );
 
-    const totalServicePrice = selectedServices.reduce((total, service) => {
-      const selectedDates = service.selectedDates || [];
-      const serviceQuantity = service.quantity * selectedDates.length;
-      return total + service.price * serviceQuantity;
-    }, 0);
+            const totalServicePrice = selectedServices.reduce(
+              (total, service) => {
+                const selectedDates = service.selectedDates || [];
+                const serviceQuantity = service.quantity * selectedDates.length;
+                return total + service.price * serviceQuantity;
+              },
+              0
+            );
 
-    const totalPrice = totalRoomPrice + totalServicePrice;
+            const totalPrice = totalRoomPrice + totalServicePrice;
 
-    const params = {
-      hotelId: hotelDetail._id,
-      checkOutDate: searchInfo.checkoutDate,
-      checkInDate: searchInfo.checkinDate,
-      totalPrice: totalPrice,
-      roomDetails: selectedRooms.map(({ room, amount }) => ({
-        room: {
-          _id: room._id,
+            const params = {
+              hotelId: hotelDetail._id,
+              checkOutDate: searchInfo.checkoutDate,
+              checkInDate: searchInfo.checkinDate,
+              totalPrice: totalPrice,
+              roomDetails: selectedRooms.map(({ room, amount }) => ({
+                room: {
+                  _id: room._id,
+                },
+                amount: amount,
+              })),
+              serviceDetails: selectedServices.map((service) => ({
+                _id: service._id,
+                quantity:
+                  service.quantity * (service.selectedDates?.length || 0),
+                selectDate: service.selectedDates || [],
+              })),
+            };
+
+            console.log("params >> ", params);
+
+            try {
+              const response = await Factories.create_booking(params);
+              console.log("response >> ", response);
+              if (response?.status === 200) {
+                console.log("response >> ", response);
+                const unpaidReservationId =
+                  response?.data?.unpaidReservation?._id;
+                const responseCheckout = await Factories.checkout_booking(
+                  unpaidReservationId
+                );
+                console.log("responseCheckout >> ", responseCheckout);
+                const paymentUrl = responseCheckout?.data?.sessionUrl;
+                if (paymentUrl) {
+                  window.location.href = paymentUrl;
+                }
+              }
+              if (response?.status === 201) {
+                console.log("response >> ", response);
+                const reservationId = response?.data?.reservation?._id;
+                const responseCheckout = await Factories.checkout_booking(
+                  reservationId
+                );
+                const paymentUrl = responseCheckout?.data?.sessionUrl;
+                if (paymentUrl) {
+                  window.location.href = paymentUrl;
+                }
+              } else {
+                console.log("error create booking");
+              }
+            } catch (error) {
+              console.error("Error create payment: ", error);
+              navigate(Routers.ErrorPage);
+            }
+          } else {
+            setShowModalStatusBooking(true);
+          }
         },
-        amount: amount,
-      })),
-      serviceDetails: selectedServices.map((service) => ({
-        _id: service._id,
-        quantity: service.quantity * (service.selectedDates?.length || 0),
-        selectDate: service.selectedDates || [],
-      })),
-    };
-
-    console.log("params >> ", params);
-
-    // try {
-    //   const response = await Factories.create_booking(params);
-    //   if (response?.status === 201) {
-    //     const reservation= response?.data.reservation
-    //     console.log("reservation: ", reservation)
-    //     navigate(Routers.PaymentPage,
-    //       {
-    //         state: {
-    //           createdAt: reservation.createdAt,
-    //           totalPrice: totalPrice,
-    //           idReservation: reservation._id,
-    //           messageSuccess: response?.data.message
-    //         }
-    //       }
-    //     )
-    //   }else{
-    //     console.log("unpaidReservation: ", response?.data.unpaidReservation)
-    //     navigate(Routers.PaymentPage,
-    //       {
-    //         state: {
-    //           createdAt: response?.data.unpaidReservation.createdAt,
-    //           totalPrice: response?.data.unpaidReservation.totalPrice,
-    //           idReservation: response?.data.unpaidReservation._id,
-    //           messageError: response?.data.message
-    //         }
-    //       }
-    //     )
-    //   }
-    // } catch (error) {
-    //   console.error("Error create payment: ", error);
-    //   navigate(Routers.ErrorPage,)
-    // } finally {
-    // }
-
-    // Thinh update create booking and checkout START 13/06/2025
-    try {
-      const response = await Factories.create_booking(params);
-      console.log("response >> ", response);
-      if (response?.status === 200) {
-        console.log("response >> ", response);
-        const unpaidReservationId = response?.data?.unpaidReservation?._id;
-        const responseCheckout = await Factories.checkout_booking(
-          unpaidReservationId
-        );
-        console.log("responseCheckout >> ", responseCheckout);
-        const paymentUrl = responseCheckout?.data?.sessionUrl;
-        if (paymentUrl) {
-          window.location.href = paymentUrl;
-        }
-      }
-      if (response?.status === 201) {
-        console.log("response >> ", response);
-        const reservationId = response?.data?.reservation?._id;
-        const responseCheckout = await Factories.checkout_booking(
-          reservationId
-        );
-        const paymentUrl = responseCheckout?.data?.sessionUrl;
-        if (paymentUrl) {
-          window.location.href = paymentUrl;
-        }
-      } else {
-        console.log("error create booking");
-      }
-    } catch (error) {
-      console.error("Error create payment: ", error);
-      navigate(Routers.ErrorPage);
-    }
-    // Thinh update create booking and checkout END 13/06/2025
+      },
+    });
   };
 
   const handleAccept = () => {
@@ -600,6 +588,12 @@ const BookingCheckPage = () => {
         </div>
       </div>
       <Footer />
+      <HotelClosedModal
+        show={showModalStatusBooking}
+        onClose={() => {
+          setShowModalStatusBooking(false);
+        }}
+      />
     </div>
   );
 };
