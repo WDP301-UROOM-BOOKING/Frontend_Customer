@@ -1037,7 +1037,7 @@ export default function HotelDetailPage() {
                             handleThumbnailClick(image, actualIndex)
                           }
                           style={{
-                            width: "300px",
+                            width: "195px",
                             objectFit: "cover",
                             cursor: "pointer",
                             border:
