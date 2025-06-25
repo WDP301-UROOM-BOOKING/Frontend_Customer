@@ -256,6 +256,39 @@ const BookingBill = () => {
       const allItemsData = [...roomsData, ...servicesData];
 
       // Document definition
+      const pdfTableBody = [
+        ["STT", "Rooms and Services", "Quantity", "Price"],
+        ...allItemsData,
+        [
+          "",
+          "",
+          "Total amount",
+          formatCurrency(
+            reservationDetail.totalAmount ||
+              reservationDetail.totalPrice ||
+              calculateTotalPrice(
+                reservationDetail.rooms,
+                reservationDetail.services,
+                reservationDetail.checkInDate,
+                reservationDetail.checkOutDate
+              )
+          ),
+        ],
+      ];
+      if (reservationDetail.promotionDiscount > 0) {
+        pdfTableBody.push([
+          "",
+          "",
+          { text: "Discount", color: "red" },
+          { text: "-" + formatCurrency(reservationDetail.promotionDiscount), color: "red" },
+        ]);
+        pdfTableBody.push([
+          "",
+          "",
+          { text: "Total after discount", color: "green", bold: true },
+          { text: formatCurrency(reservationDetail.finalPrice), color: "green", bold: true },
+        ]);
+      }
       const docDefinition = {
         content: [
           // Header
@@ -338,25 +371,7 @@ const BookingBill = () => {
           {
             table: {
               widths: ["10%", "40%", "20%", "30%"],
-              body: [
-                ["STT", "Rooms and Services", "Quantity", "Price"],
-                ...allItemsData,
-                [
-                  "",
-                  "",
-                  "Total amount",
-                  formatCurrency(
-                    reservationDetail.totalAmount ||
-                      reservationDetail.totalPrice ||
-                      calculateTotalPrice(
-                        reservationDetail.rooms, 
-                        reservationDetail.services,
-                        reservationDetail.checkInDate,
-                        reservationDetail.checkOutDate
-                      )
-                  ),
-                ],
-              ],
+              body: pdfTableBody,
             },
             margin: [0, 0, 0, 20],
           },
@@ -795,6 +810,30 @@ const BookingBill = () => {
                             </strong>
                           </td>
                         </tr>
+                        {reservationDetail.promotionDiscount > 0 && (
+                          <tr className="discount-row">
+                            <td colSpan={2}>
+                              <strong>Discount</strong>
+                            </td>
+                            <td colSpan={2}>
+                              <span style={{ color: 'red', fontWeight: 'bold' }}>-
+                                {formatCurrency(reservationDetail.promotionDiscount)}
+                              </span>
+                            </td>
+                          </tr>
+                        )}
+                        {reservationDetail.promotionDiscount > 0 && (
+                          <tr className="final-row">
+                            <td colSpan={2}>
+                              <strong>Total after discount</strong>
+                            </td>
+                            <td colSpan={2}>
+                              <strong style={{ color: 'green' }}>
+                                {formatCurrency(reservationDetail.finalPrice)}
+                              </strong>
+                            </td>
+                          </tr>
+                        )}
                       </tbody>
                     </Table>
                   </div>

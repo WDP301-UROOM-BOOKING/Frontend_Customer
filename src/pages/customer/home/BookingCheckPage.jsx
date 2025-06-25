@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import axios from "axios";
 import {
   Container,
   Row,
@@ -43,6 +44,13 @@ const BookingCheckPage = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const [bookingFor, setBookingFor] = useState("mainGuest");
+
+  // Promotion code state
+  const [promotionCode, setPromotionCode] = useState("");
+  const [promotionDiscount, setPromotionDiscount] = useState(0);
+  const [promotionMessage, setPromotionMessage] = useState("");
+  const [promotionId, setPromotionId] = useState(null);
+  const [checkingPromotion, setCheckingPromotion] = useState(false);
 
   // Add state for booking data
   const [bookingData, setBookingData] = useState({
@@ -150,7 +158,8 @@ const BookingCheckPage = () => {
               hotelId: hotelDetail._id,
               checkOutDate: searchInfo.checkoutDate,
               checkInDate: searchInfo.checkinDate,
-              totalPrice: totalPrice,
+              totalPrice: totalPrice, // giá gốc
+              finalPrice: finalPrice, // giá sau giảm giá
               roomDetails: selectedRooms.map(({ room, amount }) => ({
                 room: {
                   _id: room._id,
@@ -163,6 +172,9 @@ const BookingCheckPage = () => {
                   service.quantity * (service.selectedDates?.length || 0),
                 selectDate: service.selectedDates || [],
               })),
+              // Thêm promotionId và promotionDiscount nếu có
+              ...(promotionId && { promotionId }),
+              ...(promotionDiscount > 0 && { promotionDiscount }),
             };
 
             console.log("params >> ", params);
@@ -225,6 +237,47 @@ const BookingCheckPage = () => {
         },
       });
     }
+  };
+  // Promotion code handling
+  // Tổng tiền chưa giảm giá
+  const totalRoomPrice = selectedRooms.reduce(
+    (total, { room, amount }) => total + room.price * amount * numberOfDays,
+    0
+  );
+  const totalServicePrice = selectedServices.reduce((total, service) => {
+    const selectedDates = service.selectedDates || [];
+    const serviceQuantity = service.quantity * selectedDates.length;
+    return total + service.price * serviceQuantity;
+  }, 0);
+  const totalPrice = totalRoomPrice + totalServicePrice;
+
+  // Tổng tiền sau giảm giá
+  const finalPrice = Math.max(totalPrice - promotionDiscount, 0);
+
+  // Hàm kiểm tra promotion code
+  const handleCheckPromotion = async () => {
+    setCheckingPromotion(true);
+    setPromotionMessage("");
+    setPromotionDiscount(0);
+    setPromotionId(null);
+    try {
+      const res = await axios.post("http://localhost:5000/api/promotions/apply", {
+        code: promotionCode,
+        orderAmount: totalPrice,
+      });
+      if (res.data.valid) {
+        setPromotionDiscount(res.data.discount);
+        setPromotionId(res.data.promotionId);
+        setPromotionMessage("Promotion applied: -" + Utils.formatCurrency(res.data.discount));
+      } else {
+        setPromotionMessage(res.data.message || "Invalid promotion code");
+      }
+    } catch (err) {
+      setPromotionMessage(
+        err?.response?.data?.message || "Invalid promotion code"
+      );
+    }
+    setCheckingPromotion(false);
   };
 
   const handleConfirmBooking = () => {
@@ -451,23 +504,39 @@ const BookingCheckPage = () => {
                   }}
                 ></div>
 
+                {/* Promotion code input */}
+                <h5 className="mb-4">Promotion</h5>
+                <div className="promotion-section mb-3">
+                  <InputGroup>
+                    <Form.Control
+                      type="text"
+                      placeholder="Enter promotion code"
+                      value={promotionCode}
+                      onChange={(e) => setPromotionCode(e.target.value)}
+                      disabled={checkingPromotion}
+                    />
+                    <Button
+                      variant="outline-light"
+                      onClick={handleCheckPromotion}
+                      disabled={checkingPromotion || !promotionCode}
+                    >
+                      {checkingPromotion ? "Checking..." : "Apply"}
+                    </Button>
+                  </InputGroup>
+                  {promotionMessage && (
+                    <div
+                      className={`mt-2 small ${promotionDiscount > 0 ? "text-success" : "text-danger"
+                        }`}
+                    >
+                      {promotionMessage}
+                    </div>
+                  )}
+                </div>
+
                 <div className="total-price">
                   <div className="d-flex justify-content-between align-items-center">
                     <h5 className="text-danger mb-0">
-                      Total:{" "}
-                      {Utils.formatCurrency(
-                        selectedRooms.reduce(
-                          (total, { room, amount }) =>
-                            total + room.price * amount * numberOfDays,
-                          0
-                        ) +
-                          selectedServices.reduce((total, service) => {
-                            const selectedDates = service.selectedDates || [];
-                            const serviceQuantity =
-                              service.quantity * selectedDates.length;
-                            return total + service.price * serviceQuantity;
-                          }, 0)
-                      )}
+                      Total: {Utils.formatCurrency(finalPrice)}
                     </h5>
                   </div>
                   <div className="small">Includes taxes and fees</div>
