@@ -179,13 +179,28 @@ const BookingCheckPage = () => {
 
             console.log("params >> ", params);
 
+            // Helper function to save reservationId to bookingStack
+            const saveReservationIdToBookingStack = (reservationId) => {
+              if (reservationId) {
+                const bookingStack = JSON.parse(sessionStorage.getItem("bookingStack") || "[]");
+                if (bookingStack.length > 0) {
+                  bookingStack[bookingStack.length - 1].reservationId = reservationId;
+                  sessionStorage.setItem("bookingStack", JSON.stringify(bookingStack));
+                }
+              }
+            };
             try {
-              const response = await Factories.create_booking(params);
+              let reservationId = null;
+              const bookingStack = JSON.parse(sessionStorage.getItem("bookingStack") || "[]");
+              if (bookingStack.length > 0 && bookingStack[bookingStack.length - 1].reservationId) {
+                reservationId = bookingStack[bookingStack.length - 1].reservationId;
+              }
+              const response = await Factories.create_booking({ ...params, reservationId });
               console.log("response >> ", response);
               if (response?.status === 200) {
-                console.log("response >> ", response);
-                const unpaidReservationId =
-                  response?.data?.unpaidReservation?._id;
+                reservationId = response?.data?.unpaidReservation?._id;
+                saveReservationIdToBookingStack(reservationId);
+                const unpaidReservationId = reservationId;
                 const responseCheckout = await Factories.checkout_booking(
                   unpaidReservationId
                 );
@@ -194,10 +209,9 @@ const BookingCheckPage = () => {
                 if (paymentUrl) {
                   window.location.href = paymentUrl;
                 }
-              }
-              if (response?.status === 201) {
-                console.log("response >> ", response);
-                const reservationId = response?.data?.reservation?._id;
+              } else if (response?.status === 201) {
+                reservationId = response?.data?.reservation?._id;
+                saveReservationIdToBookingStack(reservationId);
                 const responseCheckout = await Factories.checkout_booking(
                   reservationId
                 );
