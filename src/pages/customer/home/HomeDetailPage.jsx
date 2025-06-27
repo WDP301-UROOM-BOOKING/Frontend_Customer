@@ -920,7 +920,7 @@ export default function HotelDetailPage() {
             } else {
               navigate(Routers.LoginPage);
             }
-          }else{
+          } else {
             setShowModalStatusBooking(true);
           }
         },
@@ -2247,103 +2247,101 @@ export default function HotelDetailPage() {
                         >
                           <ExclamationTriangleFill size={20} color="red" />
                         </Button>
-                        <Card.Body>
-                          <div className="d-flex justify-content-between align-items-start mb-2">
-                            <div className="d-flex align-items-center">
-                              <Image
-                                src={
-                                  review.user?.image?.url ||
-                                  "https://i.pinimg.com/736x/8f/1c/a2/8f1ca2029e2efceebd22fa05cca423d7.jpg"
-                                }
-                                roundedCircle
-                                style={{
-                                  width: "50px",
-                                  height: "50px",
-                                  marginRight: "10px",
-                                }}
-                              />
-                              <div>
-                                <h6 className="mb-0">{review.user?.name}</h6>
+                        {review.statusActive !== "NONACTIVE" && (
+                          <Card.Body>
+                            <div className="d-flex justify-content-between align-items-start mb-2">
+                              <div className="d-flex align-items-center">
+                                <Image
+                                  src={
+                                    review.user?.image?.url ||
+                                    "https://i.pinimg.com/736x/8f/1c/a2/8f1ca2029e2efceebd22fa05cca423d7.jpg"
+                                  }
+                                  roundedCircle
+                                  style={{
+                                    width: "50px",
+                                    height: "50px",
+                                    marginRight: "10px",
+                                  }}
+                                />
                                 <div>
-                                  {renderStars(review.rating)}
-                                  <small className="text-muted ms-2">
-                                    {Utils.getDate(review.createdAt, 4)}
-                                  </small>
+                                  <h6 className="mb-0">{review.user?.name}</h6>
+                                  <div>
+                                    {renderStars(review.rating)}
+                                    <small className="text-muted ms-2">
+                                      {Utils.getDate(review.createdAt, 4)}
+                                    </small>
+                                  </div>
                                 </div>
                               </div>
                             </div>
-                          </div>
-                          <p>{review.content}</p>
-                          <div>
-                            <span
-                              className="p-0 me-3"
-                              style={{
-                                textDecoration: "none",
-                                cursor: review.likedBy.includes(Auth._id)
-                                  ? "pointer"
-                                  : "pointer",
-                                color: review.likedBy.includes(Auth._id)
-                                  ? "blue"
-                                  : "black",
-                                userSelect: "none",
-                              }}
-                              onMouseEnter={(e) => {
-                                if (!review.likedBy.includes(Auth._id)) {
-                                  e.currentTarget.style.color = "#0d6efd";
-                                }
-                              }}
-                              onMouseLeave={(e) => {
-                                if (!review.likedBy.includes(Auth._id)) {
-                                  e.currentTarget.style.color = "black";
-                                }
-                              }}
-                              onClick={() => {
-                                if (Auth._id !== -1) {
-                                  handleLike(review._id);
-                                } else {
-                                  navigate(Routers.LoginPage);
-                                }
-                              }}
-                            >
-                              <FaThumbsUp className="me-2" />
-                              {review.likedBy.length} like
-                            </span>
+                            <p>{review.content}</p>
+                            <div>
+                              <span
+                                className="p-0 me-3"
+                                style={{
+                                  textDecoration: "none",
+                                  cursor: "pointer",
+                                  color: review.likedBy.includes(Auth._id)
+                                    ? "blue"
+                                    : "black",
+                                  userSelect: "none",
+                                }}
+                                onMouseEnter={(e) => {
+                                  if (!review.likedBy.includes(Auth._id)) {
+                                    e.currentTarget.style.color = "#0d6efd";
+                                  }
+                                }}
+                                onMouseLeave={(e) => {
+                                  if (!review.likedBy.includes(Auth._id)) {
+                                    e.currentTarget.style.color = "black";
+                                  }
+                                }}
+                                onClick={() => {
+                                  if (Auth._id !== -1) {
+                                    handleLike(review._id);
+                                  } else {
+                                    navigate(Routers.LoginPage);
+                                  }
+                                }}
+                              >
+                                <FaThumbsUp className="me-2" />
+                                {review.likedBy.length} like
+                              </span>
 
-                            <span
-                              className="p-0"
-                              style={{
-                                textDecoration: "none",
-                                cursor: review.dislikedBy.includes(Auth._id)
-                                  ? "pointer"
-                                  : "pointer",
-                                color: review.dislikedBy.includes(Auth._id)
-                                  ? "red"
-                                  : "black",
-                                userSelect: "none",
-                              }}
-                              onMouseEnter={(e) => {
-                                if (!review.dislikedBy.includes(Auth._id)) {
-                                  e.currentTarget.style.color = "#dc3545";
-                                }
-                              }}
-                              onMouseLeave={(e) => {
-                                if (!review.dislikedBy.includes(Auth._id)) {
-                                  e.currentTarget.style.color = "black";
-                                }
-                              }}
-                              onClick={() => {
-                                if (Auth._id !== -1) {
-                                  handleDisLike(review._id);
-                                } else {
-                                  navigate(Routers.LoginPage);
-                                }
-                              }}
-                            >
-                              <FaThumbsDown className="me-2" />
-                              {review.dislikedBy.length} dislike
-                            </span>
-                          </div>
-                        </Card.Body>
+                              <span
+                                className="p-0"
+                                style={{
+                                  textDecoration: "none",
+                                  cursor: "pointer",
+                                  color: review.dislikedBy.includes(Auth._id)
+                                    ? "red"
+                                    : "black",
+                                  userSelect: "none",
+                                }}
+                                onMouseEnter={(e) => {
+                                  if (!review.dislikedBy.includes(Auth._id)) {
+                                    e.currentTarget.style.color = "#dc3545";
+                                  }
+                                }}
+                                onMouseLeave={(e) => {
+                                  if (!review.dislikedBy.includes(Auth._id)) {
+                                    e.currentTarget.style.color = "black";
+                                  }
+                                }}
+                                onClick={() => {
+                                  if (Auth._id !== -1) {
+                                    handleDisLike(review._id);
+                                  } else {
+                                    navigate(Routers.LoginPage);
+                                  }
+                                }}
+                              >
+                                <FaThumbsDown className="me-2" />
+                                {review.dislikedBy.length} dislike
+                              </span>
+                            </div>
+                          </Card.Body>
+                        )}
                       </Card>
                     </Col>
                   </Row>

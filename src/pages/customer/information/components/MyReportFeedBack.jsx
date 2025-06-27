@@ -17,7 +17,7 @@ import { showToast } from "@components/ToastContainer";
 import { Star, StarFill, X, Pencil, Trash } from "react-bootstrap-icons";
 import ConfirmationModal from "@components/ConfirmationModal";
 import Utils from "../../../../utils/Utils";
-
+  
 const STATUS_OPTIONS = ["All", "Pending", "Approved", "Rejected"];
 
 const MyReportFeedbacks = () => {
@@ -31,7 +31,6 @@ const MyReportFeedbacks = () => {
   const [showAcceptModal, setShowAcceptModal] = useState(false);
   const [selectedFeedbackId, setSelectedFeedbackId] = useState(null);
 
-
   useEffect(() => {
     if (Auth._id) fetchUserReports(Auth._id);
   }, [Auth._id]);
@@ -42,7 +41,11 @@ const MyReportFeedbacks = () => {
       type: ReportFeedbacksActions.FETCH_REPORTS_BY_USERID,
       payload: {
         userId,
-        onSuccess: (data) => fetchAllFeedbacks(data),
+        onSuccess: (data) => {
+          console.log("Dữ liệu", data);
+          fetchAllFeedbacks(data);
+        },
+
         onFailed: () => setLoading(false),
         onError: (err) => {
           showToast.error("Server error while fetching report feedbacks");
@@ -66,9 +69,11 @@ const MyReportFeedbacks = () => {
             dispatch({
               type: FeedbackActions.FETCH_FEEDBACK_BY_ID,
               payload: {
-                feedbackId: report.feedback._id,
-                onSuccess: (feedbackData) =>
-                  resolve({ ...report, feedback: feedbackData }),
+                feedbackId: report?.feedback?._id,
+                onSuccess: (feedbackData) => {
+                  resolve({ ...report, feedback: feedbackData });
+                },
+
                 onFailed: () => reject("Failed to fetch feedback"),
                 onError: (err) => reject(err),
               },
@@ -118,8 +123,6 @@ const MyReportFeedbacks = () => {
         pages.push(page);
       }
     }
-
-
 
     return (
       <div className="d-flex justify-content-center mt-4">
@@ -221,7 +224,7 @@ const MyReportFeedbacks = () => {
   };
   useEffect(() => {
     if (paginatedReports.length == 0 && currentPage > 1) {
-      setCurrentPage(prev => prev - 1);
+      setCurrentPage((prev) => prev - 1);
     }
   }, [paginatedReports, currentPage]);
 
@@ -275,7 +278,9 @@ const MyReportFeedbacks = () => {
               style={{ width: 80, height: 80, opacity: 0.75 }}
             />
           </div>
-          <h5 className="text-muted fw-semibold">No Reported {sortOption} Yet</h5>
+          <h5 className="text-muted fw-semibold">
+            No Reported {sortOption} Yet
+          </h5>
           <p className="text-secondary mb-0" style={{ maxWidth: 350 }}>
             You Haven't Had Any Reported {sortOption} Yet.
           </p>
@@ -287,44 +292,55 @@ const MyReportFeedbacks = () => {
               <Card.Body className="p-4">
                 <Row className="g-4 align-items-center">
                   <Col md={5} className="border-end border-2">
-                    <div className="d-flex align-items-center mb-3">
-                      <Image
-                        src={
-                          report.feedback?.user?.image?.url ||
-                          "https://i.pinimg.com/736x/8f/1c/a2/8f1ca2029e2efceebd22fa05cca423d7.jpg"
-                        }
-                        roundedCircle
-                        style={{ width: 50, height: 50, marginRight: 12 }}
-                      />
-                      <div>
-                        <h6 className="mb-0">
-                          {report.feedback?.user.name || "Unknown User"}
-                        </h6>
+                    {report.feedback?.statusActive === "NONACTIVE" ? (
+                      <div className="text-muted fst-italic text-center">
+                        <p className="mb-0">Feedback đã xoá</p>
                       </div>
-                    </div>
-                    <div className="mb-1">
-                      <strong>Rating:</strong>{" "}
-                      {renderStars(report.feedback.rating || 0)}
-                    </div>
-                    <div className="mb-1">
-                      <strong>Created at:</strong>{" "}
-                      {Utils.getDate(report.feedback.createdAt, 4)}
-                    </div>
-
-                    <p className="mb-2">
-                      <strong>Description:</strong>{" "}
-                      {report.feedback?.content || "No feedback content"}
-                    </p>
-                    <div className="d-flex gap-3 mt-2">
-                      < b className="text-primary p-0 me-3">
-                        <FaThumbsUp className="me-1" />
-                        {report.feedback?.likedBy?.length || 0} likes
-                      </b>
-                      <b className="text-danger p-0">
-                        <FaThumbsDown className="me-1" />
-                        {report.feedback?.dislikedBy?.length || 0} dislikes
-                      </b>
-                    </div>
+                    ) : (
+                      <>
+                        <div className="d-flex align-items-center mb-3">
+                          <Image
+                            src={
+                              report.feedback?.user?.image?.url ||
+                              "https://i.pinimg.com/736x/8f/1c/a2/8f1ca2029e2efceebd22fa05cca423d7.jpg"
+                            }
+                            roundedCircle
+                            style={{ width: 50, height: 50, marginRight: 12 }}
+                          />
+                          <div>
+                            <h6 className="mb-0">
+                              {report.feedback?.user.name || "Unknown User"}
+                            </h6>
+                          </div>
+                        </div>
+                        <div className="mb-1">
+                          <strong>Rating:</strong>{" "}
+                          {renderStars(report.feedback.rating || 0)}
+                        </div>
+                        <div className="mb-1">
+                          <strong>Created at:</strong>{" "}
+                          {Utils.getDate(report.feedback.createdAt, 4)}
+                        </div>
+                        <p className="mb-2">
+                          <strong>Description:</strong>{" "}
+                          {report.feedback?.content || "No feedback content"}
+                        </p>
+                        {/* <p className="mb-2">
+                          <strong>StatusActive:</strong>{" "}
+                          {report.feedback?.statusActive}
+                        </p> */}
+                        <div className="d-flex gap-3 mt-2">
+                          <b className="text-primary p-0 me-3">
+                            <FaThumbsUp className="me-1" />
+                            {report.feedback?.likedBy?.length || 0} likes
+                          </b>
+                          <b className="text-danger p-0">
+                            <FaThumbsDown className="me-1" />
+                            {report.feedback?.dislikedBy?.length || 0} dislikes
+                          </b>
+                        </div>
+                      </>
+                    )}
                   </Col>
 
                   <Col md={7}>
@@ -373,6 +389,13 @@ const MyReportFeedbacks = () => {
                         {report.status}
                       </span>
                     </p>
+
+                    {report.status === "REJECT" &&
+                      report.rejectReason?.trim() && (
+                        <p className="text-danger mt-2 mb-0">
+                          <strong>Reason:</strong> {report.rejectReason}
+                        </p>
+                      )}
                   </Col>
                 </Row>
               </Card.Body>
