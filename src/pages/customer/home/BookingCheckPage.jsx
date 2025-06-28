@@ -10,13 +10,14 @@ import {
   InputGroup,
 } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
-import { FaStar, FaRegStar } from "react-icons/fa";
+import { FaStar, FaRegStar, FaTag, FaTimes } from "react-icons/fa";
 import Banner from "../../../images/banner.jpg";
 import Header from "../Header";
 import Footer from "../Footer";
 import * as Routers from "../../../utils/Routes";
 import { useNavigate } from "react-router-dom";
 import ConfirmationModal from "@components/ConfirmationModal";
+import PromotionModal from "./components/PromotionModal";
 import { useAppSelector, useAppDispatch } from "../../../redux/store";
 import Utils from "../../../utils/Utils";
 import Factories from "../../../redux/search/factories";
@@ -50,7 +51,6 @@ const BookingCheckPage = () => {
   const [promotionDiscount, setPromotionDiscount] = useState(0);
   const [promotionMessage, setPromotionMessage] = useState("");
   const [promotionId, setPromotionId] = useState(null);
-  const [checkingPromotion, setCheckingPromotion] = useState(false);
 
   // Add state for booking data
   const [bookingData, setBookingData] = useState({
@@ -59,6 +59,8 @@ const BookingCheckPage = () => {
     hotelDetail: hotelDetailFromRedux || null,
     searchInfo: SearchInformation,
   });
+
+  const [dataRestored, setDataRestored] = useState(false);
 
   // Restore data from sessionStorage stack when component mounts
   useEffect(() => {
@@ -79,20 +81,36 @@ const BookingCheckPage = () => {
         },
       });
     }
+    setDataRestored(true);
   }, [dispatch]);
 
-  // Handle navigation back to HomeDetailPage
-  const handleBackToHomeDetail = () => {
-    const bookingStack = JSON.parse(
-      sessionStorage.getItem("bookingStack") || "[]"
-    );
-    if (bookingStack.length > 0) {
-      // Remove the current booking from stack
-      bookingStack.pop();
-      sessionStorage.setItem("bookingStack", JSON.stringify(bookingStack));
+  // Load promotion info from sessionStorage AFTER booking data is restored
+  useEffect(() => {
+    if (dataRestored) {
+      const promo = JSON.parse(sessionStorage.getItem("promotionInfo") || "null");
+      if (promo) {
+        setPromotionCode(promo.promotionCode || "");
+        setPromotionDiscount(promo.promotionDiscount || 0);
+        setPromotionMessage(promo.promotionMessage || "");
+        setPromotionId(promo.promotionId || null);
+      }
     }
-    navigate(-1);
-  };
+  }, [dataRestored]);
+
+  // Save promotion info to sessionStorage when any promotion state changes
+  useEffect(() => {
+    if (dataRestored) { // Chỉ save khi đã restore xong data
+      sessionStorage.setItem(
+        "promotionInfo",
+        JSON.stringify({
+          promotionCode,
+          promotionDiscount,
+          promotionMessage,
+          promotionId,
+        })
+      );
+    }
+  }, [promotionCode, promotionDiscount, promotionMessage, promotionId, dataRestored]);
 
   // Use bookingData instead of Redux state
   const selectedRooms = bookingData.selectedRooms;
@@ -111,6 +129,69 @@ const BookingCheckPage = () => {
 
   const numberOfDays = calculateNumberOfDays();
 
+  // Calculate prices
+  const totalRoomPrice = selectedRooms.reduce(
+    (total, { room, amount }) => total + room.price * amount * numberOfDays,
+    0
+  );
+  const totalServicePrice = selectedServices.reduce((total, service) => {
+    const selectedDates = service.selectedDates || [];
+    const serviceQuantity = service.quantity * selectedDates.length;
+    return total + service.price * serviceQuantity;
+  }, 0);
+  const totalPrice = totalRoomPrice + totalServicePrice;
+  const finalPrice = Math.max(totalPrice - promotionDiscount, 0);
+
+  // Validate promotion when data is restored or booking changes
+  useEffect(() => {
+    if (!dataRestored || !promotionCode || !promotionId || promotionDiscount === 0) return;
+
+    // Add a small delay to ensure promotion is fully restored before validation
+    const timeoutId = setTimeout(() => {
+      const validatePromotion = async () => {
+        try {
+          const res = await axios.post("http://localhost:5000/api/promotions/apply", {
+            code: promotionCode,
+            orderAmount: totalPrice,
+          });
+          
+          if (!res.data.valid || res.data.discount !== promotionDiscount) {
+            // Promotion is no longer valid or discount changed
+            setPromotionCode("");
+            setPromotionDiscount(0);
+            setPromotionMessage("Promotion is no longer valid due to booking changes");
+            setPromotionId(null);
+            sessionStorage.removeItem("promotionInfo");
+          }
+        } catch (err) {
+          // Promotion validation failed
+          setPromotionCode("");
+          setPromotionDiscount(0);
+          setPromotionMessage("Promotion is no longer valid");
+          setPromotionId(null);
+          sessionStorage.removeItem("promotionInfo");
+        }
+      };
+
+      validatePromotion();
+    }, 100);
+
+    return () => clearTimeout(timeoutId);
+  }, [dataRestored, totalPrice, promotionCode, promotionId, promotionDiscount]); // Validate when total price changes or data is restored
+
+  // Handle navigation back to HomeDetailPage
+  const handleBackToHomeDetail = () => {
+    const bookingStack = JSON.parse(
+      sessionStorage.getItem("bookingStack") || "[]"
+    );
+    if (bookingStack.length > 0) {
+      // Remove the current booking from stack
+      bookingStack.pop();
+      sessionStorage.setItem("bookingStack", JSON.stringify(bookingStack));
+    }
+    navigate(-1);
+  };
+
   // Star rating component
   const StarRating = ({ rating }) => {
     return (
@@ -127,6 +208,15 @@ const BookingCheckPage = () => {
   };
 
   const [showAcceptModal, setShowAcceptModal] = useState(false);
+  const [showPromotionModal, setShowPromotionModal] = useState(false);
+
+  // Hàm xử lý áp dụng promotion từ modal
+  const handleApplyPromotionFromModal = (promotionData) => {
+    setPromotionCode(promotionData.code);
+    setPromotionDiscount(promotionData.discount);
+    setPromotionMessage(promotionData.message);
+    setPromotionId(promotionData.promotionId);
+  };
 
   const createBooking = async () => {
     dispatch({
@@ -251,47 +341,6 @@ const BookingCheckPage = () => {
         },
       });
     }
-  };
-  // Promotion code handling
-  // Tổng tiền chưa giảm giá
-  const totalRoomPrice = selectedRooms.reduce(
-    (total, { room, amount }) => total + room.price * amount * numberOfDays,
-    0
-  );
-  const totalServicePrice = selectedServices.reduce((total, service) => {
-    const selectedDates = service.selectedDates || [];
-    const serviceQuantity = service.quantity * selectedDates.length;
-    return total + service.price * serviceQuantity;
-  }, 0);
-  const totalPrice = totalRoomPrice + totalServicePrice;
-
-  // Tổng tiền sau giảm giá
-  const finalPrice = Math.max(totalPrice - promotionDiscount, 0);
-
-  // Hàm kiểm tra promotion code
-  const handleCheckPromotion = async () => {
-    setCheckingPromotion(true);
-    setPromotionMessage("");
-    setPromotionDiscount(0);
-    setPromotionId(null);
-    try {
-      const res = await axios.post("http://localhost:5000/api/promotions/apply", {
-        code: promotionCode,
-        orderAmount: totalPrice,
-      });
-      if (res.data.valid) {
-        setPromotionDiscount(res.data.discount);
-        setPromotionId(res.data.promotionId);
-        setPromotionMessage("Promotion applied: -" + Utils.formatCurrency(res.data.discount));
-      } else {
-        setPromotionMessage(res.data.message || "Invalid promotion code");
-      }
-    } catch (err) {
-      setPromotionMessage(
-        err?.response?.data?.message || "Invalid promotion code"
-      );
-    }
-    setCheckingPromotion(false);
   };
 
   const handleConfirmBooking = () => {
@@ -518,29 +567,77 @@ const BookingCheckPage = () => {
                   }}
                 ></div>
 
-                {/* Promotion code input */}
-                <h5 className="mb-4">Promotion</h5>
                 <div className="promotion-section mb-3">
-                  <InputGroup>
-                    <Form.Control
-                      type="text"
-                      placeholder="Enter promotion code"
-                      value={promotionCode}
-                      onChange={(e) => setPromotionCode(e.target.value)}
-                      disabled={checkingPromotion}
-                    />
-                    <Button
-                      variant="outline-light"
-                      onClick={handleCheckPromotion}
-                      disabled={checkingPromotion || !promotionCode}
+                  {/* Current applied promotion display */}
+                  {promotionDiscount > 0 ? (
+                    <Card 
+                      className="promotion-applied mb-3"
+                      style={{ 
+                        backgroundColor: "rgba(40, 167, 69, 0.2)", 
+                        borderColor: "#28a745",
+                        border: "2px solid #28a745"
+                      }}
                     >
-                      {checkingPromotion ? "Checking..." : "Apply"}
-                    </Button>
-                  </InputGroup>
+                      <Card.Body className="py-2">
+                        <div className="d-flex justify-content-between align-items-center">
+                          <div>
+                            <div className="d-flex align-items-center">
+                              <FaTag className="text-success me-2" />
+                              <span className="fw-bold text-success">{promotionCode}</span>
+                            </div>
+                            <small className="text-success">
+                              Save {Utils.formatCurrency(promotionDiscount)}
+                            </small>
+                          </div>
+                          <Button
+                            variant="outline-danger"
+                            size="sm"
+                            onClick={() => handleApplyPromotionFromModal({
+                              code: "",
+                              discount: 0,
+                              message: "",
+                              promotionId: null
+                            })}
+                            className="d-flex align-items-center"
+                          >
+                            <FaTimes className="me-1" />
+                            Remove
+                          </Button>
+                        </div>
+                      </Card.Body>
+                    </Card>
+                  ) : (
+                    <div className="text-center py-3 mb-3" style={{ 
+                      border: "2px dashed rgba(255,255,255,0.3)", 
+                      borderRadius: "8px",
+                      backgroundColor: "rgba(255,255,255,0.05)"
+                    }}>
+                      <FaTag className="text-muted mb-2" size={24} />
+                      <div className="text-muted small">No promotion applied</div>
+                    </div>
+                  )}
+
+                  {/* Button to open promotion modal */}
+                  <Button
+                    variant="outline-light"
+                    className="w-100 d-flex align-items-center justify-content-center"
+                    onClick={() => setShowPromotionModal(true)}
+                    style={{ 
+                      borderStyle: "dashed",
+                      borderWidth: "2px",
+                      padding: "12px"
+                    }}
+                  >
+                    <FaTag className="me-2" />
+                    {promotionDiscount > 0 ? "Change Promotion" : "Select Promotion"}
+                  </Button>
+                  
+                  {/* Promotion message */}
                   {promotionMessage && (
                     <div
-                      className={`mt-2 small ${promotionDiscount > 0 ? "text-success" : "text-danger"
-                        }`}
+                      className={`mt-2 small text-center ${
+                        promotionDiscount > 0 ? "text-success" : "text-danger"
+                      }`}
                     >
                       {promotionMessage}
                     </div>
@@ -671,6 +768,16 @@ const BookingCheckPage = () => {
         </div>
       </div>
       <Footer />
+      
+      {/* Promotion Modal */}
+      <PromotionModal
+        show={showPromotionModal}
+        onHide={() => setShowPromotionModal(false)}
+        totalPrice={totalPrice}
+        onApplyPromotion={handleApplyPromotionFromModal}
+        currentPromotionId={promotionId}
+      />
+      
       <HotelClosedModal
         show={showModalStatusBooking}
         onClose={() => {
