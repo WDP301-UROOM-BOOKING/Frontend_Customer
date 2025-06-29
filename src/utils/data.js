@@ -1,138 +1,95 @@
 import { FaWifi, FaSwimmingPool, FaParking, FaConciergeBell, FaUtensils, FaDumbbell, FaShuttleVan, FaSpa, FaChalkboardTeacher, FaDog, FaWineBottle, FaHandsWash } from "react-icons/fa";
+import { getDistricts, getProvinces, getWards } from "vietnam-provinces";
 
-export const cityOptionSelect = [
-  { value: "Hà Nội", label: "Hà Nội" },
-  { value: "Hồ Chí Minh", label: "Hồ Chí Minh" },
-  { value: "Đà Nẵng", label: "Đà Nẵng" },
-  { value: "Hải Phòng", label: "Hải Phòng" },
-  { value: "Cần Thơ", label: "Cần Thơ" },
-  { value: "An Giang", label: "An Giang" },
-  { value: "Bà Rịa - Vũng Tàu", label: "Bà Rịa - Vũng Tàu" },
-  { value: "Bắc Giang", label: "Bắc Giang" },
-  { value: "Bắc Kạn", label: "Bắc Kạn" },
-  { value: "Bạc Liêu", label: "Bạc Liêu" },
-  { value: "Bắc Ninh", label: "Bắc Ninh" },
-  { value: "Bến Tre", label: "Bến Tre" },
-  { value: "Bình Định", label: "Bình Định" },
-  { value: "Bình Dương", label: "Bình Dương" },
-  { value: "Bình Phước", label: "Bình Phước" },
-  { value: "Bình Thuận", label: "Bình Thuận" },
-  { value: "Cà Mau", label: "Cà Mau" },
-  { value: "Cao Bằng", label: "Cao Bằng" },
-  { value: "Đắk Lắk", label: "Đắk Lắk" },
-  { value: "Đắk Nông", label: "Đắk Nông" },
-  { value: "Điện Biên", label: "Điện Biên" },
-  { value: "Đồng Nai", label: "Đồng Nai" },
-  { value: "Đồng Tháp", label: "Đồng Tháp" },
-  { value: "Gia Lai", label: "Gia Lai" },
-  { value: "Hà Giang", label: "Hà Giang" },
-  { value: "Hà Nam", label: "Hà Nam" },
-  { value: "Hà Tĩnh", label: "Hà Tĩnh" },
-  { value: "Hải Dương", label: "Hải Dương" },
-  { value: "Hậu Giang", label: "Hậu Giang" },
-  { value: "Hòa Bình", label: "Hòa Bình" },
-  { value: "Hưng Yên", label: "Hưng Yên" },
-  { value: "Khánh Hòa", label: "Khánh Hòa" },
-  { value: "Kiên Giang", label: "Kiên Giang" },
-  { value: "Kon Tum", label: "Kon Tum" },
-  { value: "Lai Châu", label: "Lai Châu" },
-  { value: "Lâm Đồng", label: "Lâm Đồng" },
-  { value: "Lạng Sơn", label: "Lạng Sơn" },
-  { value: "Lào Cai", label: "Lào Cai" },
-  { value: "Long An", label: "Long An" },
-  { value: "Nam Định", label: "Nam Định" },
-  { value: "Nghệ An", label: "Nghệ An" },
-  { value: "Ninh Bình", label: "Ninh Bình" },
-  { value: "Ninh Thuận", label: "Ninh Thuận" },
-  { value: "Phú Thọ", label: "Phú Thọ" },
-  { value: "Phú Yên", label: "Phú Yên" },
-  { value: "Quảng Bình", label: "Quảng Bình" },
-  { value: "Quảng Nam", label: "Quảng Nam" },
-  { value: "Quảng Ngãi", label: "Quảng Ngãi" },
-  { value: "Quảng Ninh", label: "Quảng Ninh" },
-  { value: "Quảng Trị", label: "Quảng Trị" },
-  { value: "Sóc Trăng", label: "Sóc Trăng" },
-  { value: "Sơn La", label: "Sơn La" },
-  { value: "Tây Ninh", label: "Tây Ninh" },
-  { value: "Thái Bình", label: "Thái Bình" },
-  { value: "Thái Nguyên", label: "Thái Nguyên" },
-  { value: "Thanh Hóa", label: "Thanh Hóa" },
-  { value: "Thừa Thiên Huế", label: "Thừa Thiên Huế" },
-  { value: "Tiền Giang", label: "Tiền Giang" },
-  { value: "Trà Vinh", label: "Trà Vinh" },
-  { value: "Tuyên Quang", label: "Tuyên Quang" },
-  { value: "Vĩnh Long", label: "Vĩnh Long" },
-  { value: "Vĩnh Phúc", label: "Vĩnh Phúc" },
-  { value: "Yên Bái", label: "Yên Bái" }
-];
-
-export const districtsByCity = {
-  "Đà Nẵng": [
-    { value: "Hải Châu", label: "Hải Châu" },
-    { value: "Thanh Khê", label: "Thanh Khê" },
-    { value: "Sơn Trà", label: "Sơn Trà" },
-    { value: "Ngũ Hành Sơn", label: "Ngũ Hành Sơn" },
-    { value: "Liên Chiểu", label: "Liên Chiểu" },
-    { value: "Cẩm Lệ", label: "Cẩm Lệ" },
-    { value: "Hòa Vang", label: "Hòa Vang" },
-    { value: "Hoàng Sa", label: "Hoàng Sa" },
-  ],
-  "Hà Nội": [
-    { value: "Ba Đình", label: "Ba Đình" },
-    { value: "Hoàn Kiếm", label: "Hoàn Kiếm" },
-    { value: "Tây Hồ", label: "Tây Hồ" },
-    { value: "Long Biên", label: "Long Biên" },
-    { value: "Cầu Giấy", label: "Cầu Giấy" },
-    { value: "Đống Đa", label: "Đống Đa" },
-    { value: "Hai Bà Trưng", label: "Hai Bà Trưng" },
-    { value: "Hoàng Mai", label: "Hoàng Mai" },
-    { value: "Thanh Xuân", label: "Thanh Xuân" },
-    { value: "Sóc Sơn", label: "Sóc Sơn" },
-    { value: "Đông Anh", label: "Đông Anh" },
-    { value: "Gia Lâm", label: "Gia Lâm" },
-    { value: "Nam Từ Liêm", label: "Nam Từ Liêm" },
-    { value: "Bắc Từ Liêm", label: "Bắc Từ Liêm" },
-    { value: "Mê Linh", label: "Mê Linh" },
-    { value: "Hà Đông", label: "Hà Đông" },
-    { value: "Sơn Tây", label: "Sơn Tây" },
-    { value: "Ba Vì", label: "Ba Vì" },
-    { value: "Phúc Thọ", label: "Phúc Thọ" },
-    { value: "Đan Phượng", label: "Đan Phượng" },
-    { value: "Hoài Đức", label: "Hoài Đức" },
-    { value: "Quốc Oai", label: "Quốc Oai" },
-    { value: "Thạch Thất", label: "Thạch Thất" },
-    { value: "Chương Mỹ", label: "Chương Mỹ" },
-    { value: "Thanh Oai", label: "Thanh Oai" },
-    { value: "Thường Tín", label: "Thường Tín" },
-    { value: "Phú Xuyên", label: "Phú Xuyên" },
-    { value: "Ứng Hòa", label: "Ứng Hòa" },
-    { value: "Mỹ Đức", label: "Mỹ Đức" },
-  ],
-  "Hồ Chí Minh": [
-    { value: "Quận 1", label: "Quận 1" },
-    { value: "Quận 3", label: "Quận 3" },
-    { value: "Quận 4", label: "Quận 4" },
-    { value: "Quận 5", label: "Quận 5" },
-    { value: "Quận 6", label: "Quận 6" },
-    { value: "Quận 7", label: "Quận 7" },
-    { value: "Quận 8", label: "Quận 8" },
-    { value: "Quận 10", label: "Quận 10" },
-    { value: "Quận 11", label: "Quận 11" },
-    { value: "Quận 12", label: "Quận 12" },
-    { value: "Bình Thạnh", label: "Bình Thạnh" },
-    { value: "Tân Bình", label: "Tân Bình" },
-    { value: "Tân Phú", label: "Tân Phú" },
-    { value: "Phú Nhuận", label: "Phú Nhuận" },
-    { value: "Gò Vấp", label: "Gò Vấp" },
-    { value: "Bình Tân", label: "Bình Tân" },
-    { value: "Thủ Đức", label: "Thủ Đức" },
-    { value: "Củ Chi", label: "Củ Chi" },
-    { value: "Hóc Môn", label: "Hóc Môn" },
-    { value: "Bình Chánh", label: "Bình Chánh" },
-    { value: "Nhà Bè", label: "Nhà Bè" },
-    { value: "Cần Giờ", label: "Cần Giờ" },
-  ],
+// Transform provinces data
+const transformProvinces = () => {
+  try {
+    const provinces = getProvinces();
+    console.log('Provinces structure:', provinces); // Debug log
+    
+    if (Array.isArray(provinces)) {
+      return provinces.map(province => ({
+        value: province.name, // Sử dụng name từ API
+        label: province.name
+      }));
+    }
+    
+    return [];
+  } catch (error) {
+    console.error('Error transforming provinces:', error);
+    return [];
+  }
 };
+
+// Transform districts data - group by province
+const transformDistricts = () => {
+  try {
+    const districts = getDistricts();
+    console.log('Districts structure:', districts); // Debug log
+    
+    const result = {};
+    
+    // Nếu districts trả về array với thông tin province trong mỗi district
+    if (Array.isArray(districts)) {
+      districts.forEach(district => {
+        const provinceName = district.province_name; // Sử dụng province_name từ API
+        const districtName = district.name; // Sử dụng name từ API
+        
+        if (!result[provinceName]) {
+          result[provinceName] = [];
+        }
+        
+        result[provinceName].push({
+          value: districtName,
+          label: districtName
+        });
+      });
+    }
+    
+    return result;
+  } catch (error) {
+    console.error('Error transforming districts:', error);
+    return {};
+  }
+};
+
+// Transform wards data - group by district
+const transformWards = () => {
+  try {
+    const wards = getWards();
+    console.log('Wards structure:', wards); // Debug log
+    
+    const result = {};
+    
+    // Nếu wards trả về array với thông tin district trong mỗi ward
+    if (Array.isArray(wards)) {
+      wards.forEach(ward => {
+        const districtName = ward.district_name; // Sử dụng district_name từ API
+        const wardName = ward.name; // Sử dụng name từ API
+        
+        if (!result[districtName]) {
+          result[districtName] = [];
+        }
+        
+        result[districtName].push({
+          value: wardName,
+          label: wardName
+        });
+      });
+    }
+    
+    return result;
+  } catch (error) {
+    console.error('Error transforming wards:', error);
+    return {};
+  }
+};
+
+// Export transformed data
+export const cityOptionSelect = transformProvinces();
+export const districtsByCity = transformDistricts();
+export const wardsByDistrict = transformWards();
+
 
 
 export const listFacilities = [
