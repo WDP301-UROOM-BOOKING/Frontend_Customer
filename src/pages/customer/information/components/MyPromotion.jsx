@@ -1,16 +1,19 @@
 import React, { useState, useEffect } from "react";
 import { Card, Badge, Button, Row, Col, Spinner, Alert, Form, Container, Pagination } from "react-bootstrap";
 import { FaTag, FaCopy, FaCalendarAlt, FaPercentage, FaDollarSign, FaFilter, FaSync } from "react-icons/fa";
-import axios from "axios";
+import { useAppSelector, useAppDispatch } from "../../../../redux/store";
+import PromotionActions from "../../../../redux/promotion/actions";
 import Utils from "../../../../utils/Utils";
 import "../../../../css/MyPromotion.css";
 import { useSearchParams } from "react-router-dom";
 
 const MyPromotion = () => {
-  const [promotions, setPromotions] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const dispatch = useAppDispatch();
+  const { promotions, loading, error } = useAppSelector((state) => state.Promotion);
   const [searchParams, setSearchParams] = useSearchParams();
+
+  // Debug Redux state
+  console.log("🔍 Component: Redux state:", { promotions, loading, error });
   
   // Pagination states
   const pageParam = searchParams.get("page");
@@ -68,7 +71,7 @@ const MyPromotion = () => {
 
   useEffect(() => {
     fetchPromotions();
-  }, []);
+  }, [dispatch]);
 
   useEffect(() => {
     if (promotions.length > 0) {
@@ -229,92 +232,22 @@ const MyPromotion = () => {
     updateURL({ page: 1 });
   };
 
-  const fetchPromotions = async () => {
-    setLoading(true);
-    setError("");
-    try {
-      const response = await axios.get("http://localhost:5000/api/promotions");
-      let promotionList = response.data.promotions || response.data.data || response.data || [];
-      
-      // Lọc chỉ hiển thị promotion active hoặc upcoming
-      const now = new Date();
-      const relevantPromotions = promotionList.filter(promo => {
-        const startDate = new Date(promo.startDate);
-        const endDate = new Date(promo.endDate);
-        const status = getPromotionStatusHelper(promo, now, startDate, endDate);
-        // Chỉ hiển thị active hoặc upcoming
-        return status === "active" || status === "upcoming";
-      });
-      
-      setPromotions(relevantPromotions);
-    } catch (err) {
-      console.error("Error fetching promotions:", err);
-      setError("Failed to load promotions. Please try again later.");
-      // Fallback với mock data
-      setPromotions([
-        {
-          _id: "1",
-          code: "SAVE20",
-          name: "Save $20 Deal",
-          description: "Save $20 on orders over $100",
-          discountType: "FIXED_AMOUNT",
-          discountValue: 20,
-          minOrderAmount: 100,
-          maxDiscountAmount: 20,
-          startDate: "2025-01-01",
-          endDate: "2025-12-31",
-          isActive: true,
-          usageLimit: 100,
-          usedCount: 25
+  const fetchPromotions = () => {
+    console.log("🎯 Component: Dispatching FETCH_USER_PROMOTIONS action");
+    dispatch({
+      type: PromotionActions.FETCH_USER_PROMOTIONS,
+      payload: {
+        onSuccess: (data) => {
+          console.log("✅ Component: Fetched promotions successfully:", data);
         },
-        {
-          _id: "2",
-          code: "PERCENT10",
-          name: "10% Off Everything",
-          description: "10% off on all bookings",
-          discountType: "PERCENTAGE",
-          discountValue: 10,
-          minOrderAmount: 50,
-          maxDiscountAmount: 50,
-          startDate: "2025-01-01",
-          endDate: "2025-12-31",
-          isActive: true,
-          usageLimit: null,
-          usedCount: 0
+        onFailed: (msg) => {
+          console.error("❌ Component: Failed to fetch promotions:", msg);
         },
-        {
-          _id: "3",
-          code: "SUMMER25",
-          name: "Summer Special",
-          description: "25% off summer bookings - Starting July 1st",
-          discountType: "PERCENTAGE",
-          discountValue: 25,
-          minOrderAmount: 200,
-          maxDiscountAmount: 100,
-          startDate: "2025-07-01",
-          endDate: "2025-08-31",
-          isActive: true,
-          usageLimit: 50,
-          usedCount: 0
-        },
-        {
-          _id: "4",
-          code: "NEWUSER30",
-          name: "New User Bonus",
-          description: "$30 off for new customers - Coming soon!",
-          discountType: "FIXED_AMOUNT",
-          discountValue: 30,
-          minOrderAmount: 150,
-          maxDiscountAmount: 30,
-          startDate: "2025-08-01",
-          endDate: "2025-12-31",
-          isActive: true,
-          usageLimit: 200,
-          usedCount: 0
+        onError: (error) => {
+          console.error("💥 Component: Error fetching promotions:", error);
         }
-      ]);
-    }
-    setLoading(false);
+      }
+    });
   };
 
   const copyToClipboard = (code) => {
