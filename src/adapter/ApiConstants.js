@@ -65,6 +65,10 @@ const ApiConstants = {
   FETCH_CHAT_MESSAGE: '/chat/chat-history/:receiverId',
   FETCH_CHAT_ALL_USERS: '/chat/chat-users',
 
+  //PROMOTION
+  FETCH_USER_PROMOTIONS: "promotions",
+  USE_PROMOTION: "promotions/apply",
+
 };
 
 export default ApiConstants;
