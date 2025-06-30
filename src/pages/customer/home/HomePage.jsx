@@ -156,8 +156,8 @@ export const SearchBar = () => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [filteredHotels, setFilteredHotels] = useState([]);
   const [selectedCity, setSelectedCity] = useState({
-    value: "Hà Nội",
-    label: "Hà Nội",
+    value: "Thành phố Hà Nội",
+    label: "Thành phố Hà Nội",
   });
   const [selectedAdults, setSelectedAdults] = useState(adultsOptions[0]);
   const [selectedChildren, setSelectedChildren] = useState(childrenOptions[0]);
