@@ -17,6 +17,7 @@ import SearchActions from "../../../redux/search/actions";
 import { Modal, Button } from "react-bootstrap";
 import HotelActions from "../../../redux/hotel/actions";
 import HotelClosedModal from "./components/HotelClosedModal";
+import RoomClosedModal from "./components/RoomClosedModal";
 
 // CSS Styles
 const styles = {
@@ -656,7 +657,7 @@ function MainContent() {
   );
   const [nights, setNights] = useState(1);
   const [showModalStatusBooking, setShowModalStatusBooking] = useState(false);
-
+  const [showModalStatusBookingRoom, setShowModalStatusBookingRoom] = useState(false);
   // Add new state variables for services
   const [selectedServices, setSelectedServices] = useState([]);
   const [serviceQuantities, setServiceQuantities] = useState({});
@@ -1373,21 +1374,20 @@ function MainContent() {
                           userId: Auth._id,
                           onSuccess: async (hotel) => {
                             if (hotel.ownerStatus === "ACTIVE") {
-                              createBooking();
-                            } else {
-                              setShowModalStatusBooking(true);
-                            }
-                          },
-                        },
-                      });
-                      dispatch({
-                        type: RoomActions.FETCH_ROOM_DETAIL,
-                        payload: {
-                          roomId,
-                          onSuccess: (room) => {
-                            console.log("room detail fetched:", room);
-                            if (room.statusActive === "ACTIVE") {
-                              createBooking();
+                              dispatch({
+                                type: RoomActions.FETCH_ROOM_DETAIL,
+                                payload: {
+                                  roomId,
+                                  onSuccess: (room) => {
+                                    console.log("room detail fetched:", room);
+                                    if (room.statusActive === "ACTIVE") {
+                                      createBooking();
+                                    } else {
+                                      setShowModalStatusBookingRoom(true);
+                                    }
+                                  },
+                                },
+                              });
                             } else {
                               setShowModalStatusBooking(true);
                             }
@@ -1587,6 +1587,12 @@ function MainContent() {
         show={showModalStatusBooking}
         onClose={() => {
           setShowModalStatusBooking(false);
+        }}
+      />
+      <RoomClosedModal
+        show={showModalStatusBookingRoom}
+        onClose={() => {
+          setShowModalStatusBookingRoom(false);
         }}
       />
     </div>
