@@ -53,6 +53,7 @@
     "redux-saga": "^1.3.0",
     "socket.io-client": "^4.8.1",
     "uroom_project": "file:",
+    "vietnam-provinces": "^0.0.4",
     "web-vitals": "^2.1.4"
   },
   "scripts": {
