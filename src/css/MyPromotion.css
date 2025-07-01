@@ -1,0 +1,272 @@
+/* My Promotion Styles - Inspired by MyFeedback */
+.promotion-card {
+  border: 1px solid #e0e0e0;
+  transition: all 0.3s ease;
+  margin-bottom: 1rem;
+  cursor: pointer;
+}
+
+.promotion-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-color: #007bff;
+}
+
+.promotion-card.disabled {
+  opacity: 0.6;
+}
+
+.promotion-card.disabled:hover {
+  transform: none;
+  box-shadow: none;
+  border-color: #e0e0e0;
+}
+
+/* MyFeedback-style horizontal layout */
+.promotion-horizontal-layout {
+  display: flex;
+  align-items: stretch;
+  min-height: 140px;
+}
+
+.promotion-left-section {
+  flex: 2;
+  padding: 1rem;
+  border-right: 1px solid #e0e0e0;
+}
+
+.promotion-right-section {
+  flex: 1;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  background-color: #f8f9fa;
+}
+
+/* Filter section */
+.filter-section {
+  background-color: #f8f9fa;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.filter-row {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  min-width: 150px;
+}
+
+.filter-group label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #495057;
+  margin-bottom: 0.25rem;
+}
+
+.filter-group select,
+.filter-group input {
+  padding: 0.375rem 0.75rem;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 0.875rem;
+}
+
+.filter-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+/* Promotion status indicators */
+.status-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.875rem;
+  margin-bottom: 0.5rem;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.status-dot.active {
+  background-color: #28a745;
+}
+
+.status-dot.warning {
+  background-color: #ffc107;
+}
+
+.status-dot.danger {
+  background-color: #dc3545;
+}
+
+.status-dot.secondary {
+  background-color: #6c757d;
+}
+
+/* Badge customization */
+.badge.bg-success {
+  background-color: #28a745 !important;
+}
+
+.badge.bg-warning {
+  background-color: #ffc107 !important;
+  color: #212529 !important;
+}
+
+.badge.bg-danger {
+  background-color: #dc3545 !important;
+}
+
+.badge.bg-secondary {
+  background-color: #6c757d !important;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .promotion-horizontal-layout {
+    flex-direction: column;
+    min-height: auto;
+  }
+  
+  .promotion-left-section {
+    border-right: none;
+    border-bottom: 1px solid #e0e0e0;
+    padding-bottom: 1rem;
+  }
+  
+  .promotion-right-section {
+    padding-top: 1rem;
+    background-color: transparent;
+  }
+
+  /* Filter controls responsive */
+  .row.align-items-center {
+    flex-direction: column;
+    align-items: stretch !important;
+    gap: 0.5rem;
+  }
+  
+  .row.align-items-center .col-xs-auto,
+  .row.align-items-center .col-auto {
+    width: 100%;
+    margin-bottom: 0.5rem;
+  }
+  
+  .row.align-items-center .col-xs-auto select,
+  .row.align-items-center .col-auto select,
+  .row.align-items-center .col-xs-auto input,
+  .row.align-items-center .col-auto input {
+    width: 100% !important;
+  }
+}
+
+/* Filter section styling similar to MyFeedback */
+.filter-controls {
+  background-color: #fff;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Status badges */
+.badge {
+  font-size: 0.75rem;
+  padding: 0.35rem 0.65rem;
+}
+
+/* Promotion icon styling */
+.promotion-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f8f9fa;
+  border: 2px solid #e9ecef;
+  margin-right: 1rem;
+}
+
+.promotion-icon.percentage {
+  background-color: rgba(0, 123, 255, 0.1);
+  border-color: #007bff;
+  color: #007bff;
+}
+
+.promotion-icon.fixed {
+  background-color: rgba(40, 167, 69, 0.1);
+  border-color: #28a745;
+  color: #28a745;
+}
+
+/* Promotion summary stats */
+.promotion-stats {
+  display: flex;
+  gap: 2rem;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+}
+
+.stat-item {
+  text-align: center;
+}
+
+.stat-number {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #007bff;
+}
+
+.stat-label {
+  font-size: 0.875rem;
+  color: #6c757d;
+}
+
+/* Empty state */
+.empty-state {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: #6c757d;
+}
+
+.empty-state .fa-tag {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+  opacity: 0.3;
+}
+
+/* Animation for copy button */
+.btn-outline-primary:active {
+  transform: scale(0.95);
+  transition: transform 0.1s ease;
+}
+
+/* Loading and empty states */
+.text-center .fa-tag {
+  opacity: 0.3;
+}
+
+.spinner-border {
+  width: 3rem;
+  height: 3rem;
+}

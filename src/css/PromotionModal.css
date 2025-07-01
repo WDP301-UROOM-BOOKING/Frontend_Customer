@@ -1,0 +1,77 @@
+/* Promotion Modal Styles */
+.promotion-card {
+  transition: all 0.3s ease;
+  border-radius: 12px !important;
+}
+
+.promotion-card:hover:not(.disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(0,0,0,0.3) !important;
+}
+
+.promotion-card.current {
+  border-width: 2px !important;
+  box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3) !important;
+}
+
+.promotion-card.disabled {
+  filter: grayscale(50%);
+  cursor: not-allowed !important;
+}
+
+.promotion-applied {
+  border-radius: 12px !important;
+  box-shadow: 0 4px 12px rgba(40, 167, 69, 0.2) !important;
+}
+
+/* Custom scrollbar for modal */
+.modal-body::-webkit-scrollbar {
+  width: 8px;
+}
+
+.modal-body::-webkit-scrollbar-track {
+  background: rgba(255,255,255,0.1);
+  border-radius: 4px;
+}
+
+.modal-body::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.3);
+  border-radius: 4px;
+}
+
+.modal-body::-webkit-scrollbar-thumb:hover {
+  background: rgba(255,255,255,0.5);
+}
+
+/* Animation for promotion cards */
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.promotion-card {
+  animation: slideInUp 0.4s ease-out;
+}
+
+/* Badge styles */
+.badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.25rem 0.5rem;
+}
+
+/* Button hover effects */
+.btn-outline-light:hover {
+  background-color: rgba(255,255,255,0.1) !important;
+  border-color: rgba(255,255,255,0.5) !important;
+}
+
+.btn-outline-danger:hover {
+  background-color: rgba(220, 53, 69, 0.2) !important;
+}

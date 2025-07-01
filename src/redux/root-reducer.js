@@ -9,6 +9,7 @@ import ReportFeedbackReducer from './reportedFeedback/reducer';
 import chatboxReducer from './chatbox/reducer';
 import SocketReducer from './socket/socketSlice';
 import messageReducer from './message/reducer';
+import PromotionReducer from './promotion/reducer';
 
 const rootReducer = combineReducers({
     Auth: AuthReducer,
@@ -21,6 +22,7 @@ const rootReducer = combineReducers({
     ChatBox: chatboxReducer,
     Socket: SocketReducer,
     Message: messageReducer,
+    Promotion: PromotionReducer,
 });
 
 export default rootReducer;
