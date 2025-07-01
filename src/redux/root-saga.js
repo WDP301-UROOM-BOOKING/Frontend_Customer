@@ -8,6 +8,7 @@ import FeedbackSaga from './feedback/saga';
 import ReservationSaga from './reservations/saga';
 import ReportFeedbackSaga from './reportedFeedback/saga';
 import MessageSaga from './message/saga';
+import PromotionSaga from './promotion/saga';
 
 export default function* rootSaga() {
   yield all([
@@ -19,5 +20,6 @@ export default function* rootSaga() {
     ReservationSaga(),
     ReportFeedbackSaga(),
     MessageSaga(),
+    PromotionSaga(),
   ]);
 }

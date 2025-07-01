@@ -137,7 +137,11 @@ const BookingHistory = () => {
             checkIn: new Date(reservation.checkInDate).toLocaleDateString(),
             checkOut: new Date(reservation.checkOutDate).toLocaleDateString(),
             rooms: reservation?.rooms,
-            totalPrice: formatCurrency(reservation.totalPrice),
+            totalPrice: formatCurrency(
+              reservation.finalPrice && reservation.finalPrice > 0
+                ? reservation.finalPrice
+                : reservation.totalPrice
+            ), // Ưu tiên finalPrice nếu > 0, nếu không thì dùng totalPrice
             status: reservation.status || "PENDING",
             originalData: reservation, // Keep the original data for reference
             createdAt: reservation.createdAt,

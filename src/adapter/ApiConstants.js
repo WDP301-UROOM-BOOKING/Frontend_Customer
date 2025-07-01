@@ -30,7 +30,7 @@ const ApiConstants = {
   FETCH_FEEDBACK_BY_HOTELID: 'feedback/get-feedback-hotel/:hotelId',
   LIKE_FEEDBACK: 'feedback/like',
   DISLIKE_FEEDBACK: 'feedback/dislike',
-  FETCH_FEEDBACK_BY_ID:'feedback//getFeedbackById/:feedbackId',
+  FETCH_FEEDBACK_BY_ID:'feedback/getFeedbackById/:feedbackId',
 
   //CREATE_BOOKING:
   CREATE_BOOKING: 'payment/create-booking',
@@ -64,6 +64,10 @@ const ApiConstants = {
   //chat
   FETCH_CHAT_MESSAGE: '/chat/chat-history/:receiverId',
   FETCH_CHAT_ALL_USERS: '/chat/chat-users',
+
+  //PROMOTION
+  FETCH_USER_PROMOTIONS: "promotions",
+  USE_PROMOTION: "promotions/apply",
 
 };
 

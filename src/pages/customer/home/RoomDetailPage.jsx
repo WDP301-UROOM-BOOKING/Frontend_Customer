@@ -16,6 +16,8 @@ import Utils from "../../../utils/Utils";
 import SearchActions from "../../../redux/search/actions";
 import { Modal, Button } from "react-bootstrap";
 import HotelActions from "../../../redux/hotel/actions";
+import HotelClosedModal from "./components/HotelClosedModal";
+import RoomClosedModal from "./components/RoomClosedModal";
 
 // CSS Styles
 const styles = {
@@ -51,15 +53,15 @@ const styles = {
     flexWrap: "wrap",
   },
   imageSection: {
-    flex: "0 0 400px", 
-    maxWidth: "400px", 
+    flex: "0 0 400px",
+    maxWidth: "400px",
   },
   infoSection: {
-    flex: "1 1 400px", 
+    flex: "1 1 400px",
   },
   imageGallery: {
     display: "grid",
-    gridTemplateColumns: "2fr 1fr", 
+    gridTemplateColumns: "2fr 1fr",
     gridTemplateRows: "auto auto",
     gap: "0.5rem",
     gridTemplateAreas: `
@@ -73,7 +75,7 @@ const styles = {
     overflow: "hidden",
     boxShadow: "0 4px 12px rgba(0, 0, 0, 0.08)",
     gridArea: "main",
-    height: "320px", 
+    height: "320px",
   },
   mainImage: {
     width: "100%",
@@ -110,7 +112,7 @@ const styles = {
     boxShadow: "0 0 0 2px rgba(26, 43, 73, 0.3)",
   },
   thumbnailSmall: {
-    height: "155px", 
+    height: "155px",
     borderRadius: "8px",
     overflow: "hidden",
     position: "relative",
@@ -394,7 +396,7 @@ const styles = {
     gap: "1rem",
   },
   bookingSection: {
-    flex: "0 0 400px", 
+    flex: "0 0 400px",
     maxWidth: "400px",
     backgroundColor: "#f8f9fa",
     padding: "1.5rem",
@@ -404,8 +406,8 @@ const styles = {
   },
   servicesContainer: {
     marginTop: "1rem",
-    maxHeight: "none", 
-    overflowY: "visible", 
+    maxHeight: "none",
+    overflowY: "visible",
   },
   serviceItem: {
     padding: "0.75rem",
@@ -470,7 +472,7 @@ const styles = {
     fontSize: "0.85rem",
     fontWeight: "600",
   },
-  
+
   fullWidthImageSection: {
     marginBottom: "1.5rem",
     width: "100%",
@@ -480,7 +482,7 @@ const styles = {
     borderRadius: "12px",
     overflow: "hidden",
     boxShadow: "0 4px 12px rgba(0, 0, 0, 0.08)",
-    height: "400px", 
+    height: "400px",
     width: "100%",
   },
   thumbnailRow: {
@@ -493,7 +495,7 @@ const styles = {
     scrollbarColor: "#1a2b49 #f0f0f0",
   },
   thumbnailLarge: {
-    width: "200px", 
+    width: "200px",
     height: "150px",
     flexShrink: 0,
     borderRadius: "8px",
@@ -613,10 +615,8 @@ function MainContent() {
   const selectedRoomsTemps = useAppSelector(
     (state) => state.Search.selectedRooms
   );
-  console.log("selectedRoomsTemps: ", selectedRoomsTemps)
-  const Auth = useAppSelector(
-    (state) => state.Auth.Auth
-  );
+  console.log("selectedRoomsTemps: ", selectedRoomsTemps);
+  const Auth = useAppSelector((state) => state.Auth.Auth);
 
   const [searchParams, setSearchParams] = useState({
     address: SearchInformation.address,
@@ -642,17 +642,22 @@ function MainContent() {
     quantity: 0,
     price: 0,
     hotel: {
-      services: []
-    }
+      services: [],
+    },
   });
   const [mainImage, setMainImage] = useState("");
-  const [roomQuantity, setRoomQuantity] = useState(selectedRoomsTemps[0]?.room?._id == roomId ? selectedRoomsTemps[0]?.amount : 1);
+  const [roomQuantity, setRoomQuantity] = useState(
+    selectedRoomsTemps[0]?.room?._id == roomId
+      ? selectedRoomsTemps[0]?.amount
+      : 1
+  );
   const [checkInDate, setCheckInDate] = useState(SearchInformation.checkinDate);
   const [checkOutDate, setCheckOutDate] = useState(
     SearchInformation.checkoutDate
   );
   const [nights, setNights] = useState(1);
-
+  const [showModalStatusBooking, setShowModalStatusBooking] = useState(false);
+  const [showModalStatusBookingRoom, setShowModalStatusBookingRoom] = useState(false);
   // Add new state variables for services
   const [selectedServices, setSelectedServices] = useState([]);
   const [serviceQuantities, setServiceQuantities] = useState({});
@@ -713,8 +718,8 @@ function MainContent() {
                   },
                   onError: (err) => {
                     console.error("Error fetching hotel detail:", err);
-                  }
-                }
+                  },
+                },
               });
             }
 
@@ -797,7 +802,7 @@ function MainContent() {
         // Add only this specific service
         setServiceQuantities((prev) => ({
           ...prev,
-          [service._id]: 1
+          [service._id]: 1,
         }));
         return [...prev, service];
       }
@@ -809,7 +814,7 @@ function MainContent() {
 
     setServiceQuantities((prev) => ({
       ...prev,
-      [service._id]: amount
+      [service._id]: amount,
     }));
   };
 
@@ -834,12 +839,12 @@ function MainContent() {
       if (currentDates.includes(dateStr)) {
         return {
           ...prev,
-          [service._id]: currentDates.filter(d => d !== dateStr)
+          [service._id]: currentDates.filter((d) => d !== dateStr),
         };
       } else {
         return {
           ...prev,
-          [service._id]: [...currentDates, dateStr]
+          [service._id]: [...currentDates, dateStr],
         };
       }
     });
@@ -854,6 +859,78 @@ function MainContent() {
     setShowDateSelector(false);
     setCurrentService(null);
     setCurrentServiceIndex(0);
+  };
+
+  const createBooking = () => {
+    // Validate service dates
+    const servicesNeedingDates = selectedServices.filter((service) => {
+      const selectedDates = serviceSelectedDates[service._id] || [];
+      return selectedDates.length === 0;
+    });
+
+    if (servicesNeedingDates.length > 0) {
+      setServicesWithoutDates(servicesNeedingDates);
+      setShowDateValidationModal(true);
+      return;
+    }
+
+    // Prepare services data with quantities and dates
+    const servicesWithDetails = selectedServices.map((service) => ({
+      ...service,
+      quantity: serviceQuantities[service._id] || 1,
+      selectedDates: serviceSelectedDates[service._id] || [],
+    }));
+
+    // Save booking data to sessionStorage stack
+    const bookingData = {
+      selectedRooms: selectedRooms,
+      selectedServices: servicesWithDetails,
+      hotelDetail: {
+        ...hotelDetail,
+        star: hotelDetail.star || 0, // Ensure star property exists
+      },
+      searchInfo: {
+        checkinDate: checkInDate,
+        checkoutDate: checkOutDate,
+        adults: SearchInformation.adults,
+        childrens: SearchInformation.childrens,
+      },
+    };
+
+    // Get existing stack or initialize new one
+    const bookingStack = JSON.parse(
+      sessionStorage.getItem("bookingStack") || "[]"
+    );
+    bookingStack.push(bookingData);
+    sessionStorage.setItem("bookingStack", JSON.stringify(bookingStack));
+
+    if (Auth._id != -1) {
+      dispatch({
+        type: SearchActions.SAVE_SELECTED_ROOMS,
+        payload: {
+          selectedRooms: selectedRooms,
+          selectedServices: servicesWithDetails,
+          hotelDetail: {
+            ...hotelDetail,
+            star: hotelDetail.star || 0, // Ensure star property exists
+          },
+        },
+      });
+      navigate(Routers.BookingCheckPage);
+    } else {
+      dispatch({
+        type: SearchActions.SAVE_SELECTED_ROOMS,
+        payload: {
+          selectedRooms: selectedRooms,
+          selectedServices: servicesWithDetails,
+          hotelDetail: {
+            ...hotelDetail,
+            star: hotelDetail.star || 0, // Ensure star property exists
+          },
+        },
+      });
+      navigate(Routers.LoginPage);
+    }
   };
 
   const calculateServicePrice = (service) => {
@@ -897,7 +974,8 @@ function MainContent() {
                     key={index}
                     src={
                       image ||
-                      `https://via.placeholder.com/200x150?text=Image+${index + 1
+                      `https://via.placeholder.com/200x150?text=Image+${
+                        index + 1
                       }`
                     }
                     alt={`Room view ${index + 1}`}
@@ -977,8 +1055,8 @@ function MainContent() {
                         </span>
                       </div>
                     )) || (
-                        <div style={styles.noData}>No amenities available.</div>
-                      )}
+                      <div style={styles.noData}>No amenities available.</div>
+                    )}
                   </div>
                 </div>
 
@@ -993,7 +1071,10 @@ function MainContent() {
                       roomDetail.bed.map((b, index) => (
                         <li key={index} style={styles.bedItem}>
                           <FaIcons.FaBed style={styles.icon} />
-                          <span style={{ color: "#333333", cursor: "pointer" }} title={b.bed?.description ?? ""}>
+                          <span
+                            style={{ color: "#333333", cursor: "pointer" }}
+                            title={b.bed?.description ?? ""}
+                          >
                             {b.quantity} x {b.bed?.name || "Unknown Bed Type"}
                           </span>
                         </li>
@@ -1045,8 +1126,8 @@ function MainContent() {
                       marginBottom: "10px",
                     }}
                   >
-                    Only {location.state.availableQuantity} rooms left for
-                    this room type!
+                    Only {location.state.availableQuantity} rooms left for this
+                    room type!
                   </div>
                 ) : (
                   <div
@@ -1056,8 +1137,8 @@ function MainContent() {
                       marginBottom: "10px",
                     }}
                   >
-                    Have {location.state.availableQuantity} rooms left for
-                    this room type!
+                    Have {location.state.availableQuantity} rooms left for this
+                    room type!
                   </div>
                 )}
               </div>
@@ -1065,11 +1146,16 @@ function MainContent() {
               {/* Services Section */}
               {hotelDetail?.services && hotelDetail.services.length > 0 && (
                 <div style={styles.servicesContainer}>
-                  <h5 style={{ fontSize: "1rem", marginBottom: "0.75rem" }}>Available Services</h5>
+                  <h5 style={{ fontSize: "1rem", marginBottom: "0.75rem" }}>
+                    Available Services
+                  </h5>
                   {hotelDetail.services.map((service) => {
-                    const isSelected = selectedServices.some((s) => s._id === service._id);
+                    const isSelected = selectedServices.some(
+                      (s) => s._id === service._id
+                    );
                     const quantity = serviceQuantities[service._id] || 1;
-                    const selectedDates = serviceSelectedDates[service._id] || [];
+                    const selectedDates =
+                      serviceSelectedDates[service._id] || [];
 
                     return (
                       <div
@@ -1079,13 +1165,16 @@ function MainContent() {
                           ...(isSelected ? styles.serviceItemSelected : {}),
                           borderColor: isSelected ? "#1a2b49" : "#ddd",
                           backgroundColor: isSelected ? "#f8f9fa" : "white",
-                          boxShadow: isSelected ? "0 2px 4px rgba(0,0,0,0.1)" : "none",
+                          boxShadow: isSelected
+                            ? "0 2px 4px rgba(0,0,0,0.1)"
+                            : "none",
                         }}
                         onClick={() => handleServiceSelection(service)}
                         onMouseEnter={(e) => {
                           if (!isSelected) {
                             e.currentTarget.style.borderColor = "#1a2b49";
-                            e.currentTarget.style.boxShadow = "0 2px 4px rgba(0,0,0,0.1)";
+                            e.currentTarget.style.boxShadow =
+                              "0 2px 4px rgba(0,0,0,0.1)";
                           }
                         }}
                         onMouseLeave={(e) => {
@@ -1095,7 +1184,13 @@ function MainContent() {
                           }
                         }}
                       >
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <div
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                          }}
+                        >
                           <h6 style={{ margin: 0 }}>{service.name}</h6>
                           <span style={{ color: "#1a2b49", fontWeight: "600" }}>
                             {Utils.formatCurrency(service.price)}/{service.type}
@@ -1103,7 +1198,13 @@ function MainContent() {
                         </div>
                         {isSelected && (
                           <div style={{ marginTop: "0.5rem" }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                            <div
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "0.5rem",
+                              }}
+                            >
                               <button
                                 style={{
                                   padding: "0.25rem 0.5rem",
@@ -1114,7 +1215,10 @@ function MainContent() {
                                 }}
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleServiceQuantityChange(service, quantity - 1);
+                                  handleServiceQuantityChange(
+                                    service,
+                                    quantity - 1
+                                  );
                                 }}
                                 disabled={quantity <= 1}
                               >
@@ -1131,7 +1235,10 @@ function MainContent() {
                                 }}
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleServiceQuantityChange(service, quantity + 1);
+                                  handleServiceQuantityChange(
+                                    service,
+                                    quantity + 1
+                                  );
                                 }}
                               >
                                 +
@@ -1154,10 +1261,19 @@ function MainContent() {
                               </button>
                             </div>
                             {selectedDates.length > 0 && (
-                              <div style={{ fontSize: "0.8rem", color: "#666", marginTop: "0.5rem" }}>
-                                Selected dates: {selectedDates.map(date =>
-                                  new Date(date).toLocaleDateString()
-                                ).join(', ')}
+                              <div
+                                style={{
+                                  fontSize: "0.8rem",
+                                  color: "#666",
+                                  marginTop: "0.5rem",
+                                }}
+                              >
+                                Selected dates:{" "}
+                                {selectedDates
+                                  .map((date) =>
+                                    new Date(date).toLocaleDateString()
+                                  )
+                                  .join(", ")}
                               </div>
                             )}
                           </div>
@@ -1210,7 +1326,9 @@ function MainContent() {
                 <div style={styles.totalPriceRow}>
                   <span style={styles.totalPriceLabel}>Room Price:</span>
                   <span style={styles.totalPriceValue}>
-                    {Utils.formatCurrency(roomDetail.price * roomQuantity * nights)}
+                    {Utils.formatCurrency(
+                      roomDetail.price * roomQuantity * nights
+                    )}
                   </span>
                 </div>
                 {selectedServices.length > 0 && (
@@ -1230,14 +1348,15 @@ function MainContent() {
                   <span style={styles.totalPriceValue}>
                     {Utils.formatCurrency(
                       roomDetail.price * roomQuantity * nights +
-                      selectedServices.reduce((total, service) => {
-                        return total + calculateServicePrice(service);
-                      }, 0)
+                        selectedServices.reduce((total, service) => {
+                          return total + calculateServicePrice(service);
+                        }, 0)
                     )}
                   </span>
                 </div>
                 <div style={styles.totalPriceSubtext}>
-                  {roomQuantity} {roomQuantity > 1 ? "rooms" : "room"} × {nights} {nights > 1 ? "days" : "day"}
+                  {roomQuantity} {roomQuantity > 1 ? "rooms" : "room"} ×{" "}
+                  {nights} {nights > 1 ? "days" : "day"}
                 </div>
               </div>
 
@@ -1248,73 +1367,33 @@ function MainContent() {
                       setWarningMessage("Please select at least one room");
                       setShowWarningModal(true);
                     } else {
-                      // Validate service dates
-                      const servicesNeedingDates = selectedServices.filter(service => {
-                        const selectedDates = serviceSelectedDates[service._id] || [];
-                        return selectedDates.length === 0;
-                      });
-
-                      if (servicesNeedingDates.length > 0) {
-                        setServicesWithoutDates(servicesNeedingDates);
-                        setShowDateValidationModal(true);
-                        return;
-                      }
-
-                      // Prepare services data with quantities and dates
-                      const servicesWithDetails = selectedServices.map(service => ({
-                        ...service,
-                        quantity: serviceQuantities[service._id] || 1,
-                        selectedDates: serviceSelectedDates[service._id] || []
-                      }));
-
-                      // Save booking data to sessionStorage stack
-                      const bookingData = {
-                        selectedRooms: selectedRooms,
-                        selectedServices: servicesWithDetails,
-                        hotelDetail: {
-                          ...hotelDetail,
-                          star: hotelDetail.star || 0 // Ensure star property exists
+                      dispatch({
+                        type: HotelActions.FETCH_DETAIL_HOTEL,
+                        payload: {
+                          hotelId: hotelDetail._id,
+                          userId: Auth._id,
+                          onSuccess: async (hotel) => {
+                            if (hotel.ownerStatus === "ACTIVE") {
+                              dispatch({
+                                type: RoomActions.FETCH_ROOM_DETAIL,
+                                payload: {
+                                  roomId,
+                                  onSuccess: (room) => {
+                                    console.log("room detail fetched:", room);
+                                    if (room.statusActive === "ACTIVE") {
+                                      createBooking();
+                                    } else {
+                                      setShowModalStatusBookingRoom(true);
+                                    }
+                                  },
+                                },
+                              });
+                            } else {
+                              setShowModalStatusBooking(true);
+                            }
+                          },
                         },
-                        searchInfo: {
-                          checkinDate: checkInDate,
-                          checkoutDate: checkOutDate,
-                          adults: SearchInformation.adults,
-                          childrens: SearchInformation.childrens
-                        }
-                      };
-
-                      // Get existing stack or initialize new one
-                      const bookingStack = JSON.parse(sessionStorage.getItem('bookingStack') || '[]');
-                      bookingStack.push(bookingData);
-                      sessionStorage.setItem('bookingStack', JSON.stringify(bookingStack));
-
-                      if (Auth._id != -1) {
-                        dispatch({
-                          type: SearchActions.SAVE_SELECTED_ROOMS,
-                          payload: {
-                            selectedRooms: selectedRooms,
-                            selectedServices: servicesWithDetails,
-                            hotelDetail: {
-                              ...hotelDetail,
-                              star: hotelDetail.star || 0 // Ensure star property exists
-                            },
-                          },
-                        });
-                        navigate(Routers.BookingCheckPage);
-                      } else {
-                        dispatch({
-                          type: SearchActions.SAVE_SELECTED_ROOMS,
-                          payload: {
-                            selectedRooms: selectedRooms,
-                            selectedServices: servicesWithDetails,
-                            hotelDetail: {
-                              ...hotelDetail,
-                              star: hotelDetail.star || 0 // Ensure star property exists
-                            },
-                          },
-                        });
-                        navigate(Routers.LoginPage);
-                      }
+                      });
                     }
                   }}
                   style={styles.button}
@@ -1336,7 +1415,10 @@ function MainContent() {
       </div>
 
       {/* Add Date Validation Modal */}
-      <Modal show={showDateValidationModal} onHide={() => setShowDateValidationModal(false)}>
+      <Modal
+        show={showDateValidationModal}
+        onHide={() => setShowDateValidationModal(false)}
+      >
         <Modal.Header closeButton>
           <Modal.Title>Select Dates Required</Modal.Title>
         </Modal.Header>
@@ -1344,16 +1426,25 @@ function MainContent() {
           <div className="text-center mb-4">
             <i className="fas fa-calendar-alt fa-3x text-primary mb-3"></i>
             <h5>Please Select Dates for Services</h5>
-            <p className="text-muted">You need to select dates for the following services before proceeding with the booking:</p>
+            <p className="text-muted">
+              You need to select dates for the following services before
+              proceeding with the booking:
+            </p>
           </div>
           <div className="services-list">
-            {servicesWithoutDates.map(service => {
-              const hasSelectedDates = (serviceSelectedDates[service._id] || []).length > 0;
+            {servicesWithoutDates.map((service) => {
+              const hasSelectedDates =
+                (serviceSelectedDates[service._id] || []).length > 0;
               return (
-                <div key={service._id} className="service-item d-flex justify-content-between align-items-center p-3 mb-2 border rounded">
+                <div
+                  key={service._id}
+                  className="service-item d-flex justify-content-between align-items-center p-3 mb-2 border rounded"
+                >
                   <div>
                     <h6 className="mb-1">{service.name}</h6>
-                    <small className="text-muted">{Utils.formatCurrency(service.price)}/{service.type}</small>
+                    <small className="text-muted">
+                      {Utils.formatCurrency(service.price)}/{service.type}
+                    </small>
                     {hasSelectedDates && (
                       <div className="mt-2">
                         <small className="text-success">
@@ -1364,13 +1455,15 @@ function MainContent() {
                     )}
                   </div>
                   <button
-                    className={`btn ${hasSelectedDates ? 'btn-success' : 'btn-primary'}`}
+                    className={`btn ${
+                      hasSelectedDates ? "btn-success" : "btn-primary"
+                    }`}
                     onClick={() => {
                       handleShowDateSelector(service);
                       setShowDateValidationModal(false);
                     }}
                   >
-                    {hasSelectedDates ? 'Change Dates' : 'Select Dates'}
+                    {hasSelectedDates ? "Change Dates" : "Select Dates"}
                   </button>
                 </div>
               );
@@ -1378,7 +1471,10 @@ function MainContent() {
           </div>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowDateValidationModal(false)}>
+          <Button
+            variant="secondary"
+            onClick={() => setShowDateValidationModal(false)}
+          >
             Close
           </Button>
         </Modal.Footer>
@@ -1402,18 +1498,21 @@ function MainContent() {
                   new Date(SearchInformation.checkoutDate)
                 ).map((date) => {
                   const dateStr = date.toISOString();
-                  const isSelected = (serviceSelectedDates[currentService._id] || []).includes(dateStr);
+                  const isSelected = (
+                    serviceSelectedDates[currentService._id] || []
+                  ).includes(dateStr);
                   return (
                     <div
                       key={dateStr}
-                      className={`date-option p-2 border rounded ${isSelected ? "bg-primary text-white" : ""
-                        }`}
+                      className={`date-option p-2 border rounded ${
+                        isSelected ? "bg-primary text-white" : ""
+                      }`}
                       style={{
                         cursor: "pointer",
                         transition: "all 0.3s ease",
                         "&:hover": {
-                          backgroundColor: isSelected ? "#0056b3" : "#f8f9fa"
-                        }
+                          backgroundColor: isSelected ? "#0056b3" : "#f8f9fa",
+                        },
                       }}
                       onClick={() => handleDateSelection(currentService, date)}
                     >
@@ -1426,14 +1525,14 @@ function MainContent() {
                 <div className="mt-3">
                   <h6>Selected Dates:</h6>
                   <div className="selected-dates d-flex flex-wrap gap-2">
-                    {serviceSelectedDates[currentService._id].map(dateStr => (
+                    {serviceSelectedDates[currentService._id].map((dateStr) => (
                       <div
                         key={dateStr}
                         className="selected-date p-2 rounded"
                         style={{
                           backgroundColor: "#f8f9fa",
                           color: "#666666",
-                          border: "1px solid #ddd"
+                          border: "1px solid #ddd",
                         }}
                       >
                         {new Date(dateStr).toLocaleDateString()}
@@ -1447,10 +1546,13 @@ function MainContent() {
         </Modal.Body>
         <Modal.Footer>
           {servicesWithoutDates.length > 1 ? (
-            <Button variant="secondary" onClick={() => {
-              handleCloseDateSelector();
-              setShowDateValidationModal(true);
-            }}>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                handleCloseDateSelector();
+                setShowDateValidationModal(true);
+              }}
+            >
               Back to Services
             </Button>
           ) : (
@@ -1473,11 +1575,26 @@ function MainContent() {
           </div>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowWarningModal(false)}>
+          <Button
+            variant="secondary"
+            onClick={() => setShowWarningModal(false)}
+          >
             Close
           </Button>
         </Modal.Footer>
       </Modal>
+      <HotelClosedModal
+        show={showModalStatusBooking}
+        onClose={() => {
+          setShowModalStatusBooking(false);
+        }}
+      />
+      <RoomClosedModal
+        show={showModalStatusBookingRoom}
+        onClose={() => {
+          setShowModalStatusBookingRoom(false);
+        }}
+      />
     </div>
   );
 }

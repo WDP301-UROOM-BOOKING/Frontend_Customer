@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import axios from "axios";
 import {
   Container,
   Row,
@@ -9,20 +10,26 @@ import {
   InputGroup,
 } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
-import { FaStar, FaRegStar } from "react-icons/fa";
+import { FaStar, FaRegStar, FaTag, FaTimes } from "react-icons/fa";
 import Banner from "../../../images/banner.jpg";
 import Header from "../Header";
 import Footer from "../Footer";
 import * as Routers from "../../../utils/Routes";
 import { useNavigate } from "react-router-dom";
 import ConfirmationModal from "@components/ConfirmationModal";
+import PromotionModal from "./components/PromotionModal";
+import PromotionErrorModal from "./components/PromotionErrorModal";
 import { useAppSelector, useAppDispatch } from "../../../redux/store";
 import Utils from "../../../utils/Utils";
 import Factories from "../../../redux/search/factories";
 import { ChatBox } from "./HomePage";
 import SearchActions from "../../../redux/search/actions";
+import HotelActions from "@redux/hotel/actions";
+import HotelClosedModal from "./components/HotelClosedModal";
 
 const BookingCheckPage = () => {
+  const [showModalStatusBooking, setShowModalStatusBooking] = useState(false);
+
   const Auth = useAppSelector((state) => state.Auth.Auth);
   const SearchInformation = useAppSelector(
     (state) => state.Search.SearchInformation
@@ -40,6 +47,12 @@ const BookingCheckPage = () => {
   const dispatch = useAppDispatch();
   const [bookingFor, setBookingFor] = useState("mainGuest");
 
+  // Promotion code state
+  const [promotionCode, setPromotionCode] = useState("");
+  const [promotionDiscount, setPromotionDiscount] = useState(0);
+  const [promotionMessage, setPromotionMessage] = useState("");
+  const [promotionId, setPromotionId] = useState(null);
+
   // Add state for booking data
   const [bookingData, setBookingData] = useState({
     selectedRooms: selectedRoomsTemps || [],
@@ -47,6 +60,11 @@ const BookingCheckPage = () => {
     hotelDetail: hotelDetailFromRedux || null,
     searchInfo: SearchInformation,
   });
+
+  const [dataRestored, setDataRestored] = useState(false);
+  const [isValidatingPromotion, setIsValidatingPromotion] = useState(false);
+  const [isCheckingHotelStatus, setIsCheckingHotelStatus] = useState(false);
+  const [isValidatingPromotionBeforeBooking, setIsValidatingPromotionBeforeBooking] = useState(false);
 
   // Restore data from sessionStorage stack when component mounts
   useEffect(() => {
@@ -67,20 +85,51 @@ const BookingCheckPage = () => {
         },
       });
     }
+    setDataRestored(true);
   }, [dispatch]);
 
-  // Handle navigation back to HomeDetailPage
-  const handleBackToHomeDetail = () => {
-    const bookingStack = JSON.parse(
-      sessionStorage.getItem("bookingStack") || "[]"
-    );
-    if (bookingStack.length > 0) {
-      // Remove the current booking from stack
-      bookingStack.pop();
-      sessionStorage.setItem("bookingStack", JSON.stringify(bookingStack));
+  // Load promotion info from sessionStorage AFTER booking data is restored
+  useEffect(() => {
+    if (dataRestored) {
+      const promo = JSON.parse(sessionStorage.getItem("promotionInfo") || "null");
+      if (promo) {
+        // Check if promotion was saved more than 5 minutes ago
+        const savedTime = promo.savedTime || Date.now();
+        const timeDiff = Date.now() - savedTime;
+        const fiveMinutes = 5 * 60 * 1000;
+
+        if (timeDiff > fiveMinutes) {
+          // Auto-validate if promotion is old
+          console.log("Promotion is old, auto-validating...");
+          setPromotionCode(promo.promotionCode || "");
+          setPromotionDiscount(promo.promotionDiscount || 0);
+          setPromotionMessage("Validating promotion...");
+          setPromotionId(promo.promotionId || null);
+        } else {
+          setPromotionCode(promo.promotionCode || "");
+          setPromotionDiscount(promo.promotionDiscount || 0);
+          setPromotionMessage(promo.promotionMessage || "");
+          setPromotionId(promo.promotionId || null);
+        }
+      }
     }
-    navigate(-1);
-  };
+  }, [dataRestored]);
+
+  // Save promotion info to sessionStorage when any promotion state changes
+  useEffect(() => {
+    if (dataRestored) { // Chỉ save khi đã restore xong data
+      sessionStorage.setItem(
+        "promotionInfo",
+        JSON.stringify({
+          promotionCode,
+          promotionDiscount,
+          promotionMessage,
+          promotionId,
+          savedTime: Date.now(), // Add timestamp for validation
+        })
+      );
+    }
+  }, [promotionCode, promotionDiscount, promotionMessage, promotionId, dataRestored]);
 
   // Use bookingData instead of Redux state
   const selectedRooms = bookingData.selectedRooms;
@@ -99,6 +148,72 @@ const BookingCheckPage = () => {
 
   const numberOfDays = calculateNumberOfDays();
 
+  // Calculate prices
+  const totalRoomPrice = selectedRooms.reduce(
+    (total, { room, amount }) => total + room.price * amount * numberOfDays,
+    0
+  );
+  const totalServicePrice = selectedServices.reduce((total, service) => {
+    const selectedDates = service.selectedDates || [];
+    const serviceQuantity = service.quantity * selectedDates.length;
+    return total + service.price * serviceQuantity;
+  }, 0);
+  const subtotal = totalRoomPrice + totalServicePrice;
+  const finalPrice = Math.max(subtotal - promotionDiscount, 0);
+
+  // Validate promotion when data is restored or booking changes
+  useEffect(() => {
+    if (!dataRestored || !promotionCode || !promotionId || promotionDiscount === 0) return;
+
+    // Add a small delay to ensure promotion is fully restored before validation
+    const timeoutId = setTimeout(() => {
+      const validatePromotion = async () => {
+        setIsValidatingPromotion(true);
+        try {
+          const res = await axios.post("http://localhost:5000/api/promotions/apply", {
+            code: promotionCode,
+            orderAmount: subtotal,
+          });
+
+          if (!res.data.valid || res.data.discount !== promotionDiscount) {
+            // Promotion is no longer valid or discount changed
+            setPromotionCode("");
+            setPromotionDiscount(0);
+            setPromotionMessage("Promotion is no longer valid due to booking changes");
+            setPromotionId(null);
+            sessionStorage.removeItem("promotionInfo");
+          }
+        } catch (err) {
+          // Promotion validation failed
+          setPromotionCode("");
+          setPromotionDiscount(0);
+          setPromotionMessage("Promotion is no longer valid");
+          setPromotionId(null);
+          sessionStorage.removeItem("promotionInfo");
+        } finally {
+          setIsValidatingPromotion(false);
+        }
+      };
+
+      validatePromotion();
+    }, 100);
+
+    return () => clearTimeout(timeoutId);
+  }, [dataRestored, subtotal, promotionCode, promotionId, promotionDiscount]); // Validate when subtotal changes or data is restored
+
+  // Handle navigation back to HomeDetailPage
+  const handleBackToHomeDetail = () => {
+    const bookingStack = JSON.parse(
+      sessionStorage.getItem("bookingStack") || "[]"
+    );
+    if (bookingStack.length > 0) {
+      // Remove the current booking from stack
+      bookingStack.pop();
+      sessionStorage.setItem("bookingStack", JSON.stringify(bookingStack));
+    }
+    navigate(-1);
+  };
+
   // Star rating component
   const StarRating = ({ rating }) => {
     return (
@@ -115,119 +230,219 @@ const BookingCheckPage = () => {
   };
 
   const [showAcceptModal, setShowAcceptModal] = useState(false);
+  const [showPromotionModal, setShowPromotionModal] = useState(false);
+  const [showPromotionErrorModal, setShowPromotionErrorModal] = useState(false);
+  const [promotionErrorMessage, setPromotionErrorMessage] = useState("");
+  const [invalidPromotionCode, setInvalidPromotionCode] = useState("");
 
-  const createBooking = async () => {
-    const totalRoomPrice = selectedRooms.reduce(
-      (total, { room, amount }) => total + room.price * amount * numberOfDays,
-      0
-    );
-
-    const totalServicePrice = selectedServices.reduce((total, service) => {
-      const selectedDates = service.selectedDates || [];
-      const serviceQuantity = service.quantity * selectedDates.length;
-      return total + service.price * serviceQuantity;
-    }, 0);
-
-    const totalPrice = totalRoomPrice + totalServicePrice;
-
-    const params = {
-      hotelId: hotelDetail._id,
-      checkOutDate: searchInfo.checkoutDate,
-      checkInDate: searchInfo.checkinDate,
-      totalPrice: totalPrice,
-      roomDetails: selectedRooms.map(({ room, amount }) => ({
-        room: {
-          _id: room._id,
-        },
-        amount: amount,
-      })),
-      serviceDetails: selectedServices.map((service) => ({
-        _id: service._id,
-        quantity: service.quantity * (service.selectedDates?.length || 0),
-        selectDate: service.selectedDates || [],
-      })),
-    };
-
-    console.log("params >> ", params);
-
-    // try {
-    //   const response = await Factories.create_booking(params);
-    //   if (response?.status === 201) {
-    //     const reservation= response?.data.reservation
-    //     console.log("reservation: ", reservation)
-    //     navigate(Routers.PaymentPage,
-    //       {
-    //         state: {
-    //           createdAt: reservation.createdAt,
-    //           totalPrice: totalPrice,
-    //           idReservation: reservation._id,
-    //           messageSuccess: response?.data.message
-    //         }
-    //       }
-    //     )
-    //   }else{
-    //     console.log("unpaidReservation: ", response?.data.unpaidReservation)
-    //     navigate(Routers.PaymentPage,
-    //       {
-    //         state: {
-    //           createdAt: response?.data.unpaidReservation.createdAt,
-    //           totalPrice: response?.data.unpaidReservation.totalPrice,
-    //           idReservation: response?.data.unpaidReservation._id,
-    //           messageError: response?.data.message
-    //         }
-    //       }
-    //     )
-    //   }
-    // } catch (error) {
-    //   console.error("Error create payment: ", error);
-    //   navigate(Routers.ErrorPage,)
-    // } finally {
-    // }
-
-    // Thinh update create booking and checkout START 13/06/2025
-    try {
-      const response = await Factories.create_booking(params);
-      console.log("response >> ", response);
-      if (response?.status === 200) {
-        console.log("response >> ", response);
-        const unpaidReservationId = response?.data?.unpaidReservation?._id;
-        const responseCheckout = await Factories.checkout_booking(
-          unpaidReservationId
-        );
-        console.log("responseCheckout >> ", responseCheckout);
-        const paymentUrl = responseCheckout?.data?.sessionUrl;
-        if (paymentUrl) {
-          window.location.href = paymentUrl;
-        }
-      }
-      if (response?.status === 201) {
-        console.log("response >> ", response);
-        const reservationId = response?.data?.reservation?._id;
-        const responseCheckout = await Factories.checkout_booking(
-          reservationId
-        );
-        const paymentUrl = responseCheckout?.data?.sessionUrl;
-        if (paymentUrl) {
-          window.location.href = paymentUrl;
-        }
-      } else {
-        console.log("error create booking");
-      }
-    } catch (error) {
-      console.error("Error create payment: ", error);
-      navigate(Routers.ErrorPage);
-    }
-    // Thinh update create booking and checkout END 13/06/2025
+  // Hàm xử lý áp dụng promotion từ modal
+  const handleApplyPromotionFromModal = (promotionData) => {
+    setPromotionCode(promotionData.code);
+    setPromotionDiscount(promotionData.discount);
+    setPromotionMessage(promotionData.message);
+    setPromotionId(promotionData.promotionId);
   };
 
-  const handleAccept = () => {
+  // Function to validate promotion before booking
+  const validatePromotionBeforeBooking = async () => {
+    if (!promotionCode || !promotionId || promotionDiscount === 0) {
+      return { valid: true }; // No promotion to validate
+    }
+
+    setIsValidatingPromotionBeforeBooking(true);
+    try {
+      const res = await axios.post("http://localhost:5000/api/promotions/apply", {
+        code: promotionCode,
+        orderAmount: subtotal,
+      });
+
+      setIsValidatingPromotionBeforeBooking(false);
+
+      if (!res.data.valid) {
+        return {
+          valid: false,
+          message: res.data.message || "Promotion is no longer valid"
+        };
+      }
+
+      if (res.data.discount !== promotionDiscount) {
+        return {
+          valid: false,
+          message: "Promotion discount has changed. Please reapply the promotion."
+        };
+      }
+
+      return { valid: true };
+    } catch (err) {
+      setIsValidatingPromotionBeforeBooking(false);
+      return {
+        valid: false,
+        message: "Unable to validate promotion. Please try again."
+      };
+    }
+  };
+
+  // Function to check hotel status before booking
+  const checkHotelStatusBeforeBooking = async () => {
+    return new Promise((resolve, reject) => {
+      setIsCheckingHotelStatus(true);
+      dispatch({
+        type: HotelActions.FETCH_DETAIL_HOTEL,
+        payload: {
+          hotelId: hotelDetail._id,
+          userId: Auth._id,
+          onSuccess: (hotel) => {
+            setIsCheckingHotelStatus(false);
+            if (hotel.ownerStatus === "ACTIVE") {
+              resolve(hotel);
+            } else {
+              reject(new Error("Hotel is currently inactive"));
+            }
+          },
+          onFailed: (error) => {
+            setIsCheckingHotelStatus(false);
+            reject(new Error(error || "Failed to check hotel status"));
+          },
+          onError: (error) => {
+            setIsCheckingHotelStatus(false);
+            reject(new Error("Server error while checking hotel status"));
+          }
+        },
+      });
+    });
+  };
+
+  const createBooking = async () => {
+    try {
+      // Validate promotion first if there's one applied
+      const promotionValidation = await validatePromotionBeforeBooking();
+      if (!promotionValidation.valid) {
+        // Store error info for modal
+        setPromotionErrorMessage(promotionValidation.message);
+        setInvalidPromotionCode(promotionCode);
+
+        // Clear invalid promotion
+        setPromotionCode("");
+        setPromotionDiscount(0);
+        setPromotionMessage("");
+        setPromotionId(null);
+        sessionStorage.removeItem("promotionInfo");
+
+        // Show error modal
+        setShowPromotionErrorModal(true);
+        return;
+      }
+
+      // Check hotel status
+      const hotel = await checkHotelStatusBeforeBooking();
+      console.log("Hotel detail fetched successfully:", hotel);
+            const totalRoomPrice = selectedRooms.reduce(
+              (total, { room, amount }) =>
+                total + room.price * amount * numberOfDays,
+              0
+            );
+
+            const totalServicePrice = selectedServices.reduce(
+              (total, service) => {
+                const selectedDates = service.selectedDates || [];
+                const serviceQuantity = service.quantity * selectedDates.length;
+                return total + service.price * serviceQuantity;
+              },
+              0
+            );
+
+            const bookingSubtotal = totalRoomPrice + totalServicePrice;
+
+            const params = {
+              hotelId: hotelDetail._id,
+              checkOutDate: searchInfo.checkoutDate,
+              checkInDate: searchInfo.checkinDate,
+              totalPrice: bookingSubtotal, // giá gốc
+              finalPrice: finalPrice, // giá sau giảm giá
+              roomDetails: selectedRooms.map(({ room, amount }) => ({
+                room: {
+                  _id: room._id,
+                },
+                amount: amount,
+              })),
+              serviceDetails: selectedServices.map((service) => ({
+                _id: service._id,
+                quantity:
+                  service.quantity * (service.selectedDates?.length || 0),
+                selectDate: service.selectedDates || [],
+              })),
+              // Thêm promotionId và promotionDiscount nếu có
+              ...(promotionId && { promotionId }),
+              ...(promotionDiscount > 0 && { promotionDiscount }),
+            };
+
+            console.log("params >> ", params);
+
+            // Helper function to save reservationId to bookingStack
+            const saveReservationIdToBookingStack = (reservationId) => {
+              if (reservationId) {
+                const bookingStack = JSON.parse(sessionStorage.getItem("bookingStack") || "[]");
+                if (bookingStack.length > 0) {
+                  bookingStack[bookingStack.length - 1].reservationId = reservationId;
+                  sessionStorage.setItem("bookingStack", JSON.stringify(bookingStack));
+                }
+              }
+            };
+            try {
+              let reservationId = null;
+              const bookingStack = JSON.parse(sessionStorage.getItem("bookingStack") || "[]");
+              if (bookingStack.length > 0 && bookingStack[bookingStack.length - 1].reservationId) {
+                reservationId = bookingStack[bookingStack.length - 1].reservationId;
+              }
+              const response = await Factories.create_booking({ ...params, reservationId });
+              console.log("response >> ", response);
+              if (response?.status === 200) {
+                reservationId = response?.data?.unpaidReservation?._id;
+                saveReservationIdToBookingStack(reservationId);
+                const unpaidReservationId = reservationId;
+                const responseCheckout = await Factories.checkout_booking(
+                  unpaidReservationId
+                );
+                console.log("responseCheckout >> ", responseCheckout);
+                const paymentUrl = responseCheckout?.data?.sessionUrl;
+                if (paymentUrl) {
+                  window.location.href = paymentUrl;
+                }
+              } else if (response?.status === 201) {
+                reservationId = response?.data?.reservation?._id;
+                saveReservationIdToBookingStack(reservationId);
+                const responseCheckout = await Factories.checkout_booking(
+                  reservationId
+                );
+                const paymentUrl = responseCheckout?.data?.sessionUrl;
+                if (paymentUrl) {
+                  window.location.href = paymentUrl;
+                }
+              } else {
+                console.log("error create booking");
+              }
+            } catch (error) {
+              console.error("Error create payment: ", error);
+              navigate(Routers.ErrorPage);
+            }
+    } catch (error) {
+      console.error("Error checking hotel status:", error);
+      setShowModalStatusBooking(true);
+    }
+  };
+
+  const handleAccept = async () => {
     const totalRoomPrice = selectedRooms.reduce(
       (total, { room, amount }) => total + room.price * amount * numberOfDays,
       0
     );
 
     if (totalRoomPrice > 0) {
-      createBooking();
+      // Final validation before creating booking
+      await createBooking();
+
+      // Only clear selection if booking was successful
+      // (createBooking will handle errors and not reach this point if failed)
       dispatch({
         type: SearchActions.SAVE_SELECTED_ROOMS,
         payload: {
@@ -463,23 +678,111 @@ const BookingCheckPage = () => {
                   }}
                 ></div>
 
-                <div className="total-price">
+                <div className="promotion-section mb-3">
+                  {/* Current applied promotion display */}
+                  {promotionDiscount > 0 ? (
+                    <Card
+                      className="promotion-applied mb-3"
+                      style={{
+                        backgroundColor: "rgba(40, 167, 69, 0.2)",
+                        borderColor: "#28a745",
+                        border: "2px solid #28a745"
+                      }}
+                    >
+                      <Card.Body className="py-2">
+                        <div className="d-flex justify-content-between align-items-center">
+                          <div>
+                            <div className="d-flex align-items-center">
+                              <FaTag className="text-success me-2" />
+                              <span className="fw-bold text-success">{promotionCode}</span>
+                            </div>
+                            <small className="text-success">
+                              Save {Utils.formatCurrency(promotionDiscount)}
+                            </small>
+                          </div>
+                          <Button
+                            variant="outline-danger"
+                            size="sm"
+                            onClick={() => handleApplyPromotionFromModal({
+                              code: "",
+                              discount: 0,
+                              message: "",
+                              promotionId: null
+                            })}
+                            className="d-flex align-items-center"
+                          >
+                            <FaTimes className="me-1" />
+                            Remove
+                          </Button>
+                        </div>
+                      </Card.Body>
+                    </Card>
+                  ) : (
+                    <div className="text-center py-3 mb-3" style={{
+                      border: "2px dashed rgba(255,255,255,0.3)",
+                      borderRadius: "8px",
+                      backgroundColor: "rgba(255,255,255,0.05)"
+                    }}>
+                      <FaTag className="text-muted mb-2" size={24} />
+                      <div className="text-muted small">No promotion applied</div>
+                    </div>
+                  )}
+
+                  {/* Button to open promotion modal */}
+                  <Button
+                    variant="outline-light"
+                    className="w-100 d-flex align-items-center justify-content-center"
+                    onClick={() => setShowPromotionModal(true)}
+                    style={{
+                      borderStyle: "dashed",
+                      borderWidth: "2px",
+                      padding: "12px"
+                    }}
+                    disabled={isValidatingPromotion || isValidatingPromotionBeforeBooking}
+                  >
+                    <FaTag className="me-2" />
+                    {isValidatingPromotion || isValidatingPromotionBeforeBooking ? "Validating..." : (promotionDiscount > 0 ? "Change Promotion" : "Select Promotion")}
+                  </Button>
+
+                  {/* Validation status indicator */}
+                  {(isValidatingPromotion || isValidatingPromotionBeforeBooking) && (
+                    <div className="text-center mt-2">
+                      <small className="text-info">
+                        <div className="spinner-border spinner-border-sm me-1" role="status">
+                          <span className="visually-hidden">Loading...</span>
+                        </div>
+                        Checking promotion validity...
+                      </small>
+                    </div>
+                  )}
+                </div>
+
+                {/* Price breakdown section */}
+                <div className="price-breakdown">
+                  <div className="d-flex justify-content-between align-items-center mb-2">
+                    <span>Subtotal:</span>
+                    <span className="fw-bold">{Utils.formatCurrency(subtotal)}</span>
+                  </div>
+
+                  {promotionDiscount > 0 && (
+                    <div className="d-flex justify-content-between align-items-center mb-2">
+                      <span className="text-success">Discount:</span>
+                      <span className="fw-bold text-success">-{Utils.formatCurrency(promotionDiscount)}</span>
+                    </div>
+                  )}
+
+                  <div
+                    className="booking-divider mb-2"
+                    style={{
+                      height: "1px",
+                      backgroundColor: "rgba(255,255,255,0.2)",
+                      margin: "10px 0",
+                    }}
+                  ></div>
+
                   <div className="d-flex justify-content-between align-items-center">
                     <h5 className="text-danger mb-0">
-                      Total:{" "}
-                      {Utils.formatCurrency(
-                        selectedRooms.reduce(
-                          (total, { room, amount }) =>
-                            total + room.price * amount * numberOfDays,
-                          0
-                        ) +
-                          selectedServices.reduce((total, service) => {
-                            const selectedDates = service.selectedDates || [];
-                            const serviceQuantity =
-                              service.quantity * selectedDates.length;
-                            return total + service.price * serviceQuantity;
-                          }, 0)
-                      )}
+                      Total: {Utils.formatCurrency(finalPrice)}
                     </h5>
                   </div>
                   <div className="small">Includes taxes and fees</div>
@@ -576,8 +879,10 @@ const BookingCheckPage = () => {
                         fontWeight: "bold",
                       }}
                       onClick={handleConfirmBooking}
+                      disabled={isCheckingHotelStatus || isValidatingPromotion || isValidatingPromotionBeforeBooking}
                     >
-                      Booking
+                      {isValidatingPromotionBeforeBooking ? "Validating Promotion..." :
+                       isCheckingHotelStatus ? "Checking Hotel..." : "Booking"}
                     </Button>
                     {/* Accept Confirmation Modal */}
                     <ConfirmationModal
@@ -600,6 +905,40 @@ const BookingCheckPage = () => {
         </div>
       </div>
       <Footer />
+      
+      {/* Promotion Modal */}
+      <PromotionModal
+        show={showPromotionModal}
+        onHide={() => setShowPromotionModal(false)}
+        totalPrice={subtotal}
+        onApplyPromotion={handleApplyPromotionFromModal}
+        currentPromotionId={promotionId}
+      />
+      
+      <HotelClosedModal
+        show={showModalStatusBooking}
+        onClose={() => {
+          setShowModalStatusBooking(false);
+        }}
+      />
+
+      {/* Promotion Error Modal */}
+      <PromotionErrorModal
+        show={showPromotionErrorModal}
+        onClose={() => {
+          setShowPromotionErrorModal(false);
+          setPromotionErrorMessage("");
+          setInvalidPromotionCode("");
+        }}
+        onSelectNewPromotion={() => {
+          setShowPromotionErrorModal(false);
+          setPromotionErrorMessage("");
+          setInvalidPromotionCode("");
+          setShowPromotionModal(true);
+        }}
+        errorMessage={promotionErrorMessage}
+        promotionCode={invalidPromotionCode}
+      />
     </div>
   );
 };

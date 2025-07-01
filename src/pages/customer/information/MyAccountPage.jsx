@@ -8,6 +8,7 @@ import {
   FaComment,
   FaExclamationTriangle,
   FaMoneyBillWave,
+  FaTag,
 } from "react-icons/fa";
 import { IoSettingsSharp } from "react-icons/io5";
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -20,6 +21,7 @@ import FavoriteHotel from "./components/MyFavoriteHotel";
 import Banner from "../../../images/banner.jpg";
 import BookingHistory from "./components/BookingHistory";
 import MyReportFeedBack from "./components/MyReportFeedBack";
+import MyPromotion from "./components/MyPromotion";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import Header from "../Header";
 import Footer from "../Footer";
@@ -41,6 +43,7 @@ function MyAccountPage() {
     { name: "Booking History", icon: <FaHistory />, link: "booking_history" },
     { name: "Favorite Hotel", icon: <FaHeart />, link: "favorite_hotel" },
     { name: "My Feedback", icon: <FaComment />, link: "my_feedback" },
+    { name: "My Promotion", icon: <FaTag />, link: "my_promotion" },
     { name: "My Report", icon: <FaExclamationTriangle />, link: "my_report" }, // báo cáo
     { name: "My Refund", icon: <FaMoneyBillWave />, link: "my_refund" }, // hoàn tiền
   ];
@@ -114,6 +117,7 @@ function MyAccountPage() {
                 {section == "booking_history" && <BookingHistory />}
                 {section == "favorite_hotel" && <FavoriteHotel />}
                 {section == "my_feedback" && <MyFeedback />}
+                {section == "my_promotion" && <MyPromotion />}
                 {section == "my_report" && <MyReportFeedBack />}
                 {section == "my_refund" && <RefundReservations />}
               </Card>
