@@ -95,6 +95,19 @@ const BookingCheckPage = () => {
     if (dataRestored) {
       const promo = JSON.parse(sessionStorage.getItem("promotionInfo") || "null");
       if (promo) {
+        // Check if this is a new booking (different hotel or rooms)
+        const currentHotelId = bookingData.hotelDetail?._id;
+        const savedHotelId = promo.hotelId;
+        const currentRoomsHash = JSON.stringify(bookingData.selectedRooms?.map(r => ({ roomId: r.room._id, amount: r.amount })).sort());
+        const savedRoomsHash = promo.roomsHash;
+
+        if (currentHotelId !== savedHotelId || currentRoomsHash !== savedRoomsHash) {
+          // This is a new booking, clear old promotion
+          sessionStorage.removeItem("promotionInfo");
+          console.log("🆕 New booking detected, cleared old promotion");
+          return;
+        }
+
         // Check if promotion was saved more than 5 minutes ago
         const savedTime = promo.savedTime || Date.now();
         const timeDiff = Date.now() - savedTime;
@@ -112,10 +125,11 @@ const BookingCheckPage = () => {
           setPromotionDiscount(promo.promotionDiscount || 0);
           setPromotionMessage(promo.promotionMessage || "");
           setPromotionId(promo.promotionId || null);
+          console.log("🔄 Restored promotion for same booking:", promo.promotionCode);
         }
       }
     }
-  }, [dataRestored]);
+  }, [dataRestored, bookingData.hotelDetail, bookingData.selectedRooms]);
 
   // Save promotion info to sessionStorage when any promotion state changes
   useEffect(() => {
@@ -128,10 +142,15 @@ const BookingCheckPage = () => {
           promotionMessage,
           promotionId,
           savedTime: Date.now(), // Add timestamp for validation
+          // Save booking context to detect new bookings
+          hotelId: bookingData.hotelDetail?._id,
+          roomsHash: JSON.stringify(bookingData.selectedRooms?.map(r => ({ roomId: r.room._id, amount: r.amount })).sort())
         })
       );
     }
-  }, [promotionCode, promotionDiscount, promotionMessage, promotionId, dataRestored]);
+  }, [promotionCode, promotionDiscount, promotionMessage, promotionId, dataRestored, bookingData.hotelDetail, bookingData.selectedRooms]);
+
+
 
   // Use bookingData instead of Redux state
   const selectedRooms = bookingData.selectedRooms;
@@ -224,6 +243,8 @@ const BookingCheckPage = () => {
       bookingStack.pop();
       sessionStorage.setItem("bookingStack", JSON.stringify(bookingStack));
     }
+    // Don't clear promotion here - user might come back with same selection
+    // Promotion will be cleared only when new booking (different hotel/rooms) is detected
     navigate(-1);
   };
 
@@ -454,6 +475,8 @@ const BookingCheckPage = () => {
                 console.log("responseCheckout >> ", responseCheckout);
                 const paymentUrl = responseCheckout?.data?.sessionUrl;
                 if (paymentUrl) {
+                  // Don't clear promotion here - user might come back from payment
+                  // Promotion will be cleared when new booking is created
                   window.location.href = paymentUrl;
                 }
               } else if (response?.status === 201) {
@@ -464,6 +487,8 @@ const BookingCheckPage = () => {
                 );
                 const paymentUrl = responseCheckout?.data?.sessionUrl;
                 if (paymentUrl) {
+                  // Don't clear promotion here - user might come back from payment
+                  // Promotion will be cleared when new booking is created
                   window.location.href = paymentUrl;
                 }
               } else {
