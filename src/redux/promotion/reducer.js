@@ -100,11 +100,20 @@ const promotionReducer = (state = initialState, action) => {
       };
 
     case PromotionActions.FETCH_USER_PROMOTIONS_SUCCESS:
+      console.log("🔍 Reducer: FETCH_USER_PROMOTIONS_SUCCESS payload:", action.payload);
+
+      // Ensure we always get an array
+      let promotionsData = action.payload.promotions || action.payload;
+      if (!Array.isArray(promotionsData)) {
+        console.warn("🚨 Reducer: promotions data is not an array:", promotionsData);
+        promotionsData = [];
+      }
+
       return {
         ...state,
         loading: false,
-        promotions: action.payload.promotions || action.payload,
-        totalCount: action.payload.totalCount || action.payload.length || 0,
+        promotions: promotionsData,
+        totalCount: action.payload.totalCount || promotionsData.length || 0,
         error: null,
       };
 
