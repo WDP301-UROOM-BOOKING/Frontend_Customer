@@ -6,6 +6,7 @@ import PromotionActions from "../../../../redux/promotion/actions";
 import Utils from "../../../../utils/Utils";
 import "../../../../css/MyPromotion.css";
 import { useSearchParams } from "react-router-dom";
+import { showToast, ToastProvider } from "@components/ToastContainer";
 
 const MyPromotion = () => {
   const dispatch = useAppDispatch();
@@ -253,7 +254,7 @@ const MyPromotion = () => {
   const copyToClipboard = (code) => {
     navigator.clipboard.writeText(code);
     // Có thể thêm toast notification ở đây
-    alert(`Promotion code "${code}" copied to clipboard!`);
+    showToast.success(`Promotion code "${code}" copied to clipboard!`);
   };
 
   const getPromotionStatusHelper = (promotion, now = new Date(), startDate = null, endDate = null) => {
@@ -306,7 +307,7 @@ const MyPromotion = () => {
   return (
     <Container fluid className="bg-light py-4">
       <h2 className="fw-bold mb-4">My Promotions</h2>
-
+      <ToastProvider/>
       {/* Filter and Sort Controls */}
       <Row className="mb-4 align-items-center">
         <Col xs="auto">

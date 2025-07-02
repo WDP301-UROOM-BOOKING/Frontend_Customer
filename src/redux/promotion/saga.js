@@ -13,7 +13,8 @@ function* getUserPromotions() {
       console.log("✅ Redux Saga: API Response:", response);
 
       if (response?.status === 200) {
-        let promotions = response.data || []; // Backend trả về array trực tiếp
+        console.log("✅ response.data:", response.data);
+        let promotions = response.data.promotions || []; // Backend trả về array trực tiếp
         
         // Filter to show only active and upcoming promotions
         const now = new Date();
