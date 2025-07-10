@@ -67,7 +67,6 @@ const BookingHistory = () => {
     "CHECKED OUT", // Đã check-out, có thể để lại phản hồis
     "CHECKED IN", // Đang ở, đã check-in
     "BOOKED", // Đã đặt, trả tiền nhưng chưa check-in
-    "PENDING", // Chờ xử lý hoặc xác nhận
     "NOT PAID", // Chưa trả tiền
     "CANCELLED", // Đã hủy
   ];
@@ -77,7 +76,6 @@ const BookingHistory = () => {
     "#17A2B8", // CHECKED OUT - Xanh cyan (đã trả phòng, thông báo nhẹ)
     "#28A745", // CHECKED IN - Xanh lá (đã nhận phòng, thành công)
     "#007BFF", // BOOKED - Xanh dương (trạng thái đã đặt, trung lập)
-    "#FFC107", // PENDING - Vàng cam (đang chờ xử lý, cảnh báo nhẹ)
     "#FD7E14", // NOT PAID - Cam đậm (chưa thanh toán, cảnh báo)
     "#DC3545", // CANCELLED - Đỏ (hủy bỏ, lỗi)
   ];

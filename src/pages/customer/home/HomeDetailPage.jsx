@@ -120,6 +120,7 @@ export default function HotelDetailPage() {
   const [thumbnailStartIndex, setThumbnailStartIndex] = useState(0);
   const [rooms, setRooms] = useState([]);
   const [shuffledHotels, setShuffledHotels] = useState([]);
+  console.log("shuffledHotels", shuffledHotels);
   const [roomsByHotel, setRoomsByHotel] = useState({});
   const [feedbacks, setFeedbacks] = useState([]);
   const [totalFeedback, setTotalFeedback] = useState(0);
@@ -414,6 +415,7 @@ export default function HotelDetailPage() {
           const shuffled = [...response.data.hotels].sort(
             () => 0.5 - Math.random()
           );
+          console.log("Shuffled hotels:", shuffled);
           setShuffledHotels(shuffled);
 
           // Fetch rooms for each hotel
