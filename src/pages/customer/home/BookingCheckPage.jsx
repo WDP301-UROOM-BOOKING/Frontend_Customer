@@ -429,7 +429,6 @@ const BookingCheckPage = () => {
       });
     });
   };
-
   const createBooking = async () => {
     try {
       // Validate promotion first if there's one applied
