@@ -579,7 +579,7 @@ const BookingHistory = () => {
                         </Button>
                       )}
 
-                      {(activeFilter === 4 || activeFilter === 3) && (
+                      {(activeFilter === 3) && (
                         <Button
                           variant="outline-danger"
                           onClick={() => handleCancelReservation(reservation)}
@@ -587,13 +587,7 @@ const BookingHistory = () => {
                           Cancel Booking
                         </Button>
                       )}
-
-                      {activeFilter === 6 && (
-                        <Button variant="outline-danger" disabled={true}>
-                          Already Cancelled
-                        </Button>
-                      )}
-                      {activeFilter === 5 && (
+                      {activeFilter === 4 && (
                         <Button
                           variant="outline-warning"
                           onClick={async () => {
@@ -613,7 +607,7 @@ const BookingHistory = () => {
                           Pay Money
                         </Button>
                       )}
-                      {activeFilter === 5 && (
+                      {activeFilter === 4 && (
                         <Button
                           variant="outline-danger"
                           onClick={() => {
@@ -622,6 +616,15 @@ const BookingHistory = () => {
                           }}
                         >
                           Cancel Booking
+                        </Button>
+                      )}
+
+                      {activeFilter === 5 && (
+                        <Button
+                          variant="outline-danger"
+                          disabled={true}
+                        >
+                          Already Cancelled
                         </Button>
                       )}
                     </Col>
