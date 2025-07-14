@@ -42,13 +42,12 @@ const BookingHistory = () => {
   const filter = searchParams.get("filter");
   const date = searchParams.get("date");
   const page = searchParams.get("page");
-  console.log("Page: ", page);
   const [activeFilter, setActiveFilter] = useState(Number(filter) ?? 0);
   const [dateFilter, setDateFilter] = useState(date ?? "NEWEST");
   const [activePage, setActivePage] = useState(
     Number(page) == 0 ? 1 : Number(page)
   );
-  console.log("activePage: ", activeFilter);
+
   const [refundAmount, setRefundAmount] = useState(0);
   const [itemsPerPage, setItemsPerPage] = useState(3); // 3 columns x 2 rows = 6 items per page
   const [totalPages, setTotalPages] = useState(1);
@@ -79,6 +78,13 @@ const BookingHistory = () => {
     "#FD7E14", // NOT PAID - Cam đậm (chưa thanh toán, cảnh báo)
     "#DC3545", // CANCELLED - Đỏ (hủy bỏ, lỗi)
   ];
+
+  useEffect(() => {
+    if (selectedReservation) {
+      const total = Utils.calculateTotalPrice(selectedReservation.rooms);
+      setRefundAmount(total);
+    }
+  }, [selectedReservation]);
 
   // Update URL when filters change
   useEffect(() => {
@@ -163,7 +169,6 @@ const BookingHistory = () => {
     });
   };
 
-  console.log("res: ", reservations);
   function parseCurrency(formatted) {
     if (!formatted) return 0; // hoặc null tùy vào yêu cầu
     const numericString = formatted.replace(/[^\d]/g, "");
@@ -262,20 +267,14 @@ const BookingHistory = () => {
     setActivePage(pageNumber);
   };
 
-  console.log("Selected Reservation: ", selectedReservation);
-  const handleCancelBooking = async (id) => {
-    console.log("A: ", accountHolderName);
-    console.log("A: ", accountNumber);
-    console.log("A: ", bankName);
+  const handleCancelBooking = async (id, refundAmount) => {
+    console.log("refundAmount ", refundAmount);
 
-    if (!accountHolderName || !accountNumber || !bankName) {
-      showToast.error("Please input full information banking");
-    } else {
+      
       setShowModal(false);
       try {
         const response = await Factories.cancel_payment(id);
         if (response?.status === 200) {
-          console.log("Response: ", response);
           showToast.success("Cancel reservation successfully !!!");
         }
       } catch (error) {
@@ -292,16 +291,14 @@ const BookingHistory = () => {
           bankName
         );
         if (response?.status === 200) {
-          console.log("Response: ", response);
           showToast.success("Cancel reservation successfully !!!");
         }
-        console.log("ABC");
       } catch (error) {
         console.error("Error fetching hotels:", error);
       } finally {
       }
       fetchUserReservations();
-    }
+    
   };
 
   function parseCurrency(formatted) {
@@ -310,78 +307,81 @@ const BookingHistory = () => {
     return Number(numericString);
   }
 
-  const calculateDaysUntilCheckIn = () => {
-    if (!selectedReservation?.checkIn) {
-      return null; // hoặc return 0 tùy logic bạn muốn xử lý
-    }
+  // thinh update refund START 12/07/2025
+  const calculateHoursUntilCheckIn = () => {
+    const checkInRaw = selectedReservation?.checkInDate || selectedReservation?.checkIn;
+    if (!checkInRaw) return null;
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const now = new Date();
+    const checkInDate = new Date(checkInRaw);
+    if (isNaN(checkInDate)) return null;
 
-    const [day, month, year] = selectedReservation.checkIn.split("/");
+    // So sánh đến 12:00 PM (trưa) ngày check-in
+    checkInDate.setHours(12, 0, 0, 0);
 
-    // Kiểm tra dữ liệu tách có hợp lệ không
-    if (!day || !month || !year) {
-      return null;
-    }
-
-    const checkInDate = new Date(year, month - 1, day);
-    checkInDate.setHours(0, 0, 0, 0);
-
-    const differenceInTime = checkInDate.getTime() - today.getTime();
-    const differenceInDays = Math.ceil(differenceInTime / (1000 * 3600 * 24));
-
-    return differenceInDays;
+    const differenceInMs = checkInDate.getTime() - now.getTime();
+    return Math.floor(differenceInMs / (1000 * 60 * 60)); // ms -> hours
   };
 
+
+  // thinh update refund END 12/07/2025
+
+  // thinh update refund START 12/07/2025
   const calculateRefundPolicy = () => {
-    const daysUntilCheckIn = calculateDaysUntilCheckIn();
-    const totalPrice = parseCurrency(selectedReservation?.totalPrice);
-    if (selectedReservation?.status === "PENDING") {
+  const hoursUntilCheckIn = calculateHoursUntilCheckIn();
+  console.log(' hoursUntilCheckIn >> ', hoursUntilCheckIn)
+  const totalPrice = Number(refundAmount) || 0;
+  const status = selectedReservation?.status;
+
+  if (status === "PENDING") {
+    return {
+      refundPercentage: 100,
+      refundAmount: totalPrice,
+      message: "Full refund available (PENDING)",
+      alertClass: "refund-alert full-refund",
+      hoursUntilCheckIn,
+    };
+  }
+
+  if (status === "BOOKED") {
+    if (hoursUntilCheckIn < 24) {
+      return {
+        refundPercentage: 50,
+        refundAmount: +(totalPrice * 0.5).toFixed(2),
+        message: "50% penalty applies (under 24h)",
+        alertClass: "refund-alert penalty-high",
+        hoursUntilCheckIn,
+      };
+    } else if (hoursUntilCheckIn < 72) {
+      return {
+        refundPercentage: 80,
+        refundAmount: +(totalPrice * 0.8).toFixed(2),
+        message: "20% penalty applies (under 72h)",
+        alertClass: "refund-alert penalty-medium",
+        hoursUntilCheckIn,
+      };
+    } else {
       return {
         refundPercentage: 100,
         refundAmount: totalPrice,
         message: "Full refund available",
         alertClass: "refund-alert full-refund",
-        daysUntilCheckIn,
+        hoursUntilCheckIn,
       };
-    } else {
-      if (daysUntilCheckIn < 1) {
-        return {
-          refundPercentage: 50,
-          refundAmount: (totalPrice * 0.5).toFixed(2),
-          message: "50% penalty applies",
-          alertClass: "refund-alert penalty-high",
-          daysUntilCheckIn,
-        };
-      } else if (daysUntilCheckIn < 3) {
-        return {
-          refundPercentage: 80,
-          refundAmount: (totalPrice * 0.8).toFixed(2),
-          message: "20% penalty applies",
-          alertClass: "refund-alert penalty-medium",
-          daysUntilCheckIn,
-        };
-      } else {
-        return {
-          refundPercentage: 100,
-          refundAmount: totalPrice,
-          message: "Full refund available",
-          alertClass: "refund-alert full-refund",
-          daysUntilCheckIn,
-        };
-      }
     }
-  };
+  }
 
-  const calculateTotalPrice = (rooms) => {
-    if (!rooms || !Array.isArray(rooms)) return 0;
-    return rooms.reduce((total, roomItem) => {
-      const roomPrice = roomItem.room?.price || 0;
-      const quantity = roomItem.quantity || 1;
-      return total + roomPrice * quantity;
-    }, 0);
+  return {
+    refundPercentage: 0,
+    refundAmount: 0,
+    message: "Refund not applicable",
+    alertClass: "refund-alert penalty-high",
+    hoursUntilCheckIn,
   };
+};
+
+  // Thinh update refund END 12/07/2025
+
   return (
     <Container fluid className="py-4">
       <h2 className="fw-bold mb-4">Booking History</h2>
@@ -579,7 +579,7 @@ const BookingHistory = () => {
                         </Button>
                       )}
 
-                      {(activeFilter === 4 || activeFilter === 3) && (
+                      {(activeFilter === 3) && (
                         <Button
                           variant="outline-danger"
                           onClick={() => handleCancelReservation(reservation)}
@@ -587,13 +587,7 @@ const BookingHistory = () => {
                           Cancel Booking
                         </Button>
                       )}
-
-                      {activeFilter === 6 && (
-                        <Button variant="outline-danger" disabled={true}>
-                          Already Cancelled
-                        </Button>
-                      )}
-                      {activeFilter === 5 && (
+                      {activeFilter === 4 && (
                         <Button
                           variant="outline-warning"
                           onClick={async () => {
@@ -613,7 +607,7 @@ const BookingHistory = () => {
                           Pay Money
                         </Button>
                       )}
-                      {activeFilter === 5 && (
+                      {activeFilter === 4 && (
                         <Button
                           variant="outline-danger"
                           onClick={() => {
@@ -622,6 +616,15 @@ const BookingHistory = () => {
                           }}
                         >
                           Cancel Booking
+                        </Button>
+                      )}
+
+                      {activeFilter === 5 && (
+                        <Button
+                          variant="outline-danger"
+                          disabled={true}
+                        >
+                          Already Cancelled
                         </Button>
                       )}
                     </Col>
@@ -713,13 +716,11 @@ const BookingHistory = () => {
         setRefundAmount={setRefundAmount}
         selectedReservation={selectedReservation}
         refundAmount={
-          Utils.calculateTotalPrice(selectedReservation?.rooms) ?? 0
+          Utils.calculateTotalPrice(selectedReservation?.rooms) 
         }
         show={showModal}
         onHide={() => setShowModal(false)}
-        onConfirm={() => {
-          handleCancelBooking(selectedReservation.id);
-        }}
+        onConfirm={handleCancelBooking}
         accountHolderName={accountHolderName}
         accountNumber={accountNumber}
         bankName={bankName}
@@ -735,6 +736,7 @@ const BookingHistory = () => {
             const response = await Factories.cancel_payment(
               selectedReservation.id
             );
+            console.log("Response: ", response);
             if (response?.status === 200) {
               console.log("Response: ", response);
               showToast.success("Cancel reservation successfully !!!");

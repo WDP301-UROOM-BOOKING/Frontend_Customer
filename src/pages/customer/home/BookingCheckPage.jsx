@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, use } from "react";
 import axios from "axios";
 import {
   Container,
@@ -28,12 +28,13 @@ import HotelActions from "@redux/hotel/actions";
 import HotelClosedModal from "./components/HotelClosedModal";
 import { showToast, ToastProvider } from "@components/ToastContainer";
 import getApiBackendUrl from "@utils/apiConfig";
+import RoomClosedModal from "./components/RoomClosedModal";
 
 const BookingCheckPage = () => {
   const API_BASE_URL = getApiBackendUrl(); // Add this line
 
   const [showModalStatusBooking, setShowModalStatusBooking] = useState(false);
-
+  const [error, setError]= useState(null);
   const Auth = useAppSelector((state) => state.Auth.Auth);
   const SearchInformation = useAppSelector(
     (state) => state.Search.SearchInformation
@@ -308,6 +309,14 @@ const BookingCheckPage = () => {
   const [promotionErrorMessage, setPromotionErrorMessage] = useState("");
   const [invalidPromotionCode, setInvalidPromotionCode] = useState("");
 
+  // Add state for payment error modal
+  const [showPaymentErrorModal, setShowPaymentErrorModal] = useState(false);
+  const [paymentErrorMessage, setPaymentErrorMessage] = useState({
+    title: "",
+    mainMessage: "",
+    subMessage: ""
+  });
+
   // Hàm xử lý áp dụng promotion từ modal với batch update để tránh multiple re-renders
   const handleApplyPromotionFromModal = (promotionData) => {
     // Batch update all promotion states at once to minimize re-renders
@@ -539,11 +548,17 @@ const BookingCheckPage = () => {
             window.location.href = paymentUrl;
           }
         } else {
-          console.log("error create booking");
+          showToast.error("error create booking");
         }
       } catch (error) {
-        console.error("Error create payment: ", error);
-        navigate(Routers.ErrorPage);
+        
+        console.error("Error create payment: ", error.response?.data?.message);
+        setPaymentErrorMessage({
+          title: "Payment Error",
+          mainMessage: "Unable to process your payment at this time",
+          subMessage: error.response?.data?.message || "Please try again later"
+        });
+        setShowPaymentErrorModal(true);
       }
     } catch (error) {
       console.error("Error checking hotel status:", error);
@@ -1093,6 +1108,15 @@ const BookingCheckPage = () => {
         }}
         errorMessage={promotionErrorMessage}
         promotionCode={invalidPromotionCode}
+      />
+
+      <RoomClosedModal 
+        show={showPaymentErrorModal}
+        onClose={() => setShowPaymentErrorModal(false)}
+        title={paymentErrorMessage.title}
+        mainMessage={paymentErrorMessage.mainMessage}
+        subMessage={paymentErrorMessage.subMessage}
+        buttonText="Try Again"
       />
     </div>
   );
