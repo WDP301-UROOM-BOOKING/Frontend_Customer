@@ -1,5 +1,14 @@
 import { all, call, fork, put, takeEvery } from "@redux-saga/core/effects";
-import PromotionActions, { getPromotionsSuccess, getPromotionsFailure, usePromotionSuccess, usePromotionFailure } from "./actions";
+import PromotionActions, {
+  getPromotionsSuccess,
+  getPromotionsFailure,
+  promotionUseSuccess,
+  promotionUseFailure,
+  fetchAllPromotionsSuccess,
+  fetchAllPromotionsFailure,
+  applyPromotionSuccess,
+  applyPromotionFailure
+} from "./actions";
 import Factories from "./factories";
 
 // 1. Lấy danh sách promotion của người dùng
@@ -102,23 +111,14 @@ function* getUserPromotions() {
           ];
         }
 
-        // Filter to show only active and upcoming promotions
-        const now = new Date();
+        // Backend already filters out expired and inactive promotions
+        // We only need to filter out promotions that reached usage limit
         const relevantPromotions = promotions.filter(promo => {
-          const startDate = new Date(promo.startDate);
-          const endDate = new Date(promo.endDate);
-          
-          if (now < startDate) {
-            return promo.isActive; // upcoming
-          } else if (now > endDate) {
-            return false; // expired
-          } else if (!promo.isActive) {
-            return false; // inactive
-          } else if (promo.usageLimit && promo.usedCount >= promo.usageLimit) {
-            return false; // used_up
-          } else {
-            return promo.isActive; // active
+          // Filter out promotions that reached their usage limit
+          if (promo.usageLimit && promo.usedCount >= promo.usageLimit) {
+            return false; // used_up at global level
           }
+          return true;
         });
         
         // Apply client-side filtering if needed
@@ -132,6 +132,7 @@ function* getUserPromotions() {
         }
         
         if (status) {
+          const now = new Date(); // Define now for status filtering
           filteredPromotions = filteredPromotions.filter(promo => {
             if (status === "active") {
               const startDate = new Date(promo.startDate);
@@ -173,8 +174,8 @@ function* getUserPromotions() {
   });
 }
 
-// 2. Sử dụng promotion
-function* applyPromotion() {
+// 2. Sử dụng promotion (legacy)
+function* usePromotion() {
   yield takeEvery(PromotionActions.USE_PROMOTION, function* (action) {
     const { code, orderAmount, onSuccess, onFailed, onError } = action.payload;
 
@@ -183,18 +184,120 @@ function* applyPromotion() {
 
       if (response?.status === 200) {
         const result = response.data;
-        yield put(usePromotionSuccess(result));
+        yield put(promotionUseSuccess(result));
         onSuccess?.(result);
       } else {
         const message = response?.data?.message || response?.statusText || "Không thể sử dụng khuyến mãi";
-        yield put(usePromotionFailure(message));
+        yield put(promotionUseFailure(message));
         onFailed?.(message);
       }
     } catch (error) {
       const status = error.response?.status;
       const msg = error.response?.data?.message || "Lỗi server";
-      
-      yield put(usePromotionFailure(msg));
+
+      yield put(promotionUseFailure(msg));
+
+      if (status >= 500) {
+        onError?.(error);
+      } else {
+        onFailed?.(msg);
+      }
+    }
+  });
+}
+
+// 3. Fetch all promotions for modal
+function* fetchAllPromotions() {
+  yield takeEvery(PromotionActions.FETCH_ALL_PROMOTIONS, function* (action) {
+    const { totalPrice, onSuccess, onFailed, onError } = action.payload || {};
+
+    try {
+      console.log("🚀 Redux Saga: Fetching all promotions for modal...");
+      const response = yield call(() => Factories.fetchAllPromotions());
+      console.log("✅ Redux Saga: All promotions API Response:", response);
+
+      if (response?.status === 200) {
+        let promotions = [];
+
+        // Handle different response structures
+        if (response.data) {
+          if (response.data.promotions && Array.isArray(response.data.promotions)) {
+            promotions = response.data.promotions;
+          } else if (response.data.data && Array.isArray(response.data.data)) {
+            promotions = response.data.data;
+          } else if (Array.isArray(response.data)) {
+            promotions = response.data;
+          }
+        }
+
+        // Filter promotions based on totalPrice and availability
+        // Include both active and upcoming (coming soon) promotions for modal
+        if (totalPrice) {
+          promotions = promotions.filter(promo => {
+            const now = new Date();
+            const startDate = new Date(promo.startDate);
+            const endDate = new Date(promo.endDate);
+
+            return promo.isActive &&
+                   now <= endDate && // Not expired (include upcoming and active)
+                   (!promo.minOrderValue || totalPrice >= promo.minOrderValue) &&
+                   (!promo.usageLimit || promo.usedCount < promo.usageLimit);
+          });
+        }
+
+        console.log("✅ Redux Saga: Dispatching fetchAllPromotionsSuccess with data:", promotions);
+        yield put(fetchAllPromotionsSuccess({
+          promotions,
+          totalCount: promotions.length
+        }));
+        onSuccess?.(promotions);
+      } else {
+        const message = response?.data?.message || response?.statusText || "Không lấy được danh sách khuyến mãi";
+        console.error("❌ Redux Saga: API Error:", message);
+        yield put(fetchAllPromotionsFailure(message));
+        onFailed?.(message);
+      }
+    } catch (error) {
+      console.error("❌ Redux Saga: Error in fetchAllPromotions saga:", error);
+      const status = error.response?.status;
+      const msg = error.response?.data?.message || error.message || "Lỗi server";
+
+      yield put(fetchAllPromotionsFailure(msg));
+
+      if (status >= 500) {
+        onError?.(error);
+      } else {
+        onFailed?.(msg);
+      }
+    }
+  });
+}
+
+// 4. Apply promotion (new)
+function* applyPromotion() {
+  yield takeEvery(PromotionActions.APPLY_PROMOTION, function* (action) {
+    const { code, orderAmount, onSuccess, onFailed, onError } = action.payload || {};
+
+    try {
+      console.log("🚀 Redux Saga: Applying promotion...", { code, orderAmount });
+      const response = yield call(() => Factories.applyPromotion({ code, orderAmount }));
+      console.log("✅ Redux Saga: Apply promotion API Response:", response);
+
+      if (response?.status === 200) {
+        const result = response.data;
+        yield put(applyPromotionSuccess(result));
+        onSuccess?.(result);
+      } else {
+        const message = response?.data?.message || response?.statusText || "Không thể áp dụng khuyến mãi";
+        yield put(applyPromotionFailure(message));
+        onFailed?.(message);
+      }
+    } catch (error) {
+      console.error("❌ Redux Saga: Error in applyPromotion saga:", error);
+      const status = error.response?.status;
+      const msg = error.response?.data?.message || error.message || "Lỗi server";
+
+      yield put(applyPromotionFailure(msg));
 
       if (status >= 500) {
         onError?.(error);
@@ -208,6 +311,8 @@ function* applyPromotion() {
 export default function* promotionSaga() {
   yield all([
     fork(getUserPromotions),
+    fork(usePromotion),
+    fork(fetchAllPromotions),
     fork(applyPromotion),
   ]);
 }
