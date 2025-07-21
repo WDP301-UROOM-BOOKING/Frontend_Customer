@@ -179,8 +179,15 @@ const PromotionModal = ({ show, onHide, totalPrice, onApplyPromotion, currentPro
                   const endDate = new Date(p.endDate);
                   const isInTimeRange = now >= startDate && now <= endDate;
                   const meetsMinOrder = totalPrice >= (p.minOrderValue || p.minOrderAmount || 0);
-                  return isInTimeRange && meetsMinOrder && p.isActive;
+                  return isInTimeRange && meetsMinOrder && p.isActive && p.userCanUse !== false;
                 }).length} ready, {promotions.filter(p => {
+                  const now = new Date();
+                  const startDate = new Date(p.startDate);
+                  const endDate = new Date(p.endDate);
+                  const isInTimeRange = now >= startDate && now <= endDate;
+                  const meetsMinOrder = totalPrice >= (p.minOrderValue || p.minOrderAmount || 0);
+                  return isInTimeRange && meetsMinOrder && p.isActive && p.userCanUse === false;
+                }).length} used up, {promotions.filter(p => {
                   const now = new Date();
                   const startDate = new Date(p.startDate);
                   return now < startDate && p.isActive;
@@ -222,15 +229,24 @@ const PromotionModal = ({ show, onHide, totalPrice, onApplyPromotion, currentPro
 
                       return (
                       <div key={promotion._id} className="col-12">
-                        <Card 
-                          className={`promotion-card ${currentPromotionId === promotion._id ? 'current' : ''}`}
-                          style={{ 
-                            backgroundColor: currentPromotionId === promotion._id ? "rgba(40, 167, 69, 0.2)" : "rgba(255,255,255,0.1)",
-                            borderColor: currentPromotionId === promotion._id ? "#28a745" : "rgba(255,255,255,0.3)",
-                            cursor: "pointer",
+                        <Card
+                          className={`promotion-card ${currentPromotionId === promotion._id ? 'current' : ''} ${promotion.userCanUse === false ? 'disabled' : ''}`}
+                          style={{
+                            backgroundColor: promotion.userCanUse === false
+                              ? "rgba(108, 117, 125, 0.2)"
+                              : currentPromotionId === promotion._id
+                                ? "rgba(40, 167, 69, 0.2)"
+                                : "rgba(255,255,255,0.1)",
+                            borderColor: promotion.userCanUse === false
+                              ? "rgba(108, 117, 125, 0.5)"
+                              : currentPromotionId === promotion._id
+                                ? "#28a745"
+                                : "rgba(255,255,255,0.3)",
+                            cursor: promotion.userCanUse === false ? "not-allowed" : "pointer",
+                            opacity: promotion.userCanUse === false ? 0.6 : 1,
                             transition: "all 0.3s ease"
                           }}
-                          onClick={() => handleApplyPromotion(promotion)}
+                          onClick={() => promotion.userCanUse !== false && handleApplyPromotion(promotion)}
                         >
                           <Card.Body className="py-3">
                             <div className="d-flex justify-content-between align-items-start">
@@ -241,8 +257,25 @@ const PromotionModal = ({ show, onHide, totalPrice, onApplyPromotion, currentPro
                                   {currentPromotionId === promotion._id && (
                                     <Badge bg="success" className="ms-2">Applied</Badge>
                                   )}
-                                  <Badge bg="success" className="ms-2">Available</Badge>
+                                  {promotion.userCanUse !== false && (
+                                    <Badge bg="success" className="ms-2">Available</Badge>
+                                  )}
+                                  {promotion.userCanUse === false && (
+                                    <Badge bg="secondary" className="ms-2">Used Up</Badge>
+                                  )}
                                 </div>
+
+                                {/* Usage information */}
+                                {promotion.maxUsagePerUser && (
+                                  <div className="mb-2">
+                                    <small style={{color: 'rgba(255,255,255,0.8)'}}>
+                                      Usage: {promotion.userUsedCount || 0}/{promotion.maxUsagePerUser}
+                                      {promotion.userCanUse === false && (
+                                        <span className="text-warning ms-1">(Limit reached)</span>
+                                      )}
+                                    </small>
+                                  </div>
+                                )}
                                 
                                 <p className="mb-2 small" style={{color: 'rgba(255,255,255,0.7)'}}>{promotion.description}</p>
                                 
