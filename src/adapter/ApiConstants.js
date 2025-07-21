@@ -66,8 +66,10 @@ const ApiConstants = {
   FETCH_CHAT_ALL_USERS: '/chat/chat-users',
 
   //PROMOTION
-  FETCH_USER_PROMOTIONS: "promotions",
+  FETCH_USER_PROMOTIONS: "promotions", // Same as FETCH_ALL_PROMOTIONS
+  FETCH_ALL_PROMOTIONS: "promotions",
   USE_PROMOTION: "promotions/apply",
+  CLAIM_PROMOTION: "promotions/claim",
 
 };
 

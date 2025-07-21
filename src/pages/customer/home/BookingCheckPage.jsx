@@ -1,5 +1,4 @@
 import React, { useState, useEffect, use } from "react";
-import axios from "axios";
 import {
   Container,
   Row,
@@ -20,6 +19,7 @@ import ConfirmationModal from "@components/ConfirmationModal";
 import PromotionModal from "./components/PromotionModal";
 import PromotionErrorModal from "./components/PromotionErrorModal";
 import { useAppSelector, useAppDispatch } from "../../../redux/store";
+import { applyPromotion } from "../../../redux/promotion/actions";
 import Utils from "../../../utils/Utils";
 import Factories from "../../../redux/search/factories";
 import { ChatBox } from "./HomePage";
@@ -49,6 +49,14 @@ const BookingCheckPage = () => {
   const hotelDetailFromRedux = useAppSelector(
     (state) => state.Search.hotelDetail
   );
+
+  // Redux promotion selectors
+  const {
+    applyLoading: promotionApplyLoading,
+    applyError: promotionApplyError,
+    appliedPromotion
+  } = useAppSelector(state => state.Promotion);
+
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const [bookingFor, setBookingFor] = useState("mainGuest");
@@ -226,21 +234,19 @@ const BookingCheckPage = () => {
 
     // Add a small delay to ensure promotion is fully restored before validation
     const timeoutId = setTimeout(() => {
-      const validatePromotion = async () => {
-        // Only show loading if validation takes longer than 200ms
-        const loadingTimeoutId = setTimeout(() => {
-          setIsValidatingPromotion(true);
-        }, 200);
+      // Only show loading if validation takes longer than 200ms
+      const loadingTimeoutId = setTimeout(() => {
+        setIsValidatingPromotion(true);
+      }, 200);
 
-        try {
-          const res = await axios.post(`${API_BASE_URL}/api/promotions/apply`, {
-            code: promotionCode,
-            orderAmount: subtotal,
-          });
-
+      dispatch(applyPromotion({
+        code: promotionCode,
+        orderAmount: subtotal,
+        onSuccess: (data) => {
           clearTimeout(loadingTimeoutId);
+          setIsValidatingPromotion(false);
 
-          if (!res.data.valid || res.data.discount !== promotionDiscount) {
+          if (!data.valid || data.discount !== promotionDiscount) {
             // Batch update all promotion states to minimize re-renders
             setTimeout(() => {
               setPromotionCode("");
@@ -252,8 +258,10 @@ const BookingCheckPage = () => {
               sessionStorage.removeItem("promotionInfo");
             }, 0);
           }
-        } catch (err) {
+        },
+        onFailed: (error) => {
           clearTimeout(loadingTimeoutId);
+          setIsValidatingPromotion(false);
           // Batch update all promotion states to minimize re-renders
           setTimeout(() => {
             setPromotionCode("");
@@ -262,16 +270,12 @@ const BookingCheckPage = () => {
             setPromotionId(null);
             sessionStorage.removeItem("promotionInfo");
           }, 0);
-        } finally {
-          setIsValidatingPromotion(false);
         }
-      };
-
-      validatePromotion();
+      }));
     }, 100);
 
     return () => clearTimeout(timeoutId);
-  }, [dataRestored, subtotal, promotionCode, promotionId, promotionDiscount]); // Validate when subtotal changes or data is restored
+  }, [dataRestored, subtotal, promotionCode, promotionId, promotionDiscount, dispatch]); // Validate when subtotal changes or data is restored
 
   // Handle navigation back to HomeDetailPage
   const handleBackToHomeDetail = () => {
@@ -325,6 +329,31 @@ const BookingCheckPage = () => {
       setPromotionDiscount(promotionData.discount);
       setPromotionMessage(promotionData.message);
       setPromotionId(promotionData.promotionId);
+
+      // Update sessionStorage
+      if (promotionData.code && promotionData.promotionId) {
+        // Save new promotion to sessionStorage
+        sessionStorage.setItem(
+          "promotionInfo",
+          JSON.stringify({
+            promotionCode: promotionData.code,
+            promotionDiscount: promotionData.discount,
+            promotionMessage: promotionData.message,
+            promotionId: promotionData.promotionId,
+            savedTime: Date.now(),
+            // Save booking context to detect new bookings
+            hotelId: bookingData.hotelDetail?._id,
+            roomsHash: JSON.stringify(
+              bookingData.selectedRooms
+                ?.map((r) => ({ roomId: r.room._id, amount: r.amount }))
+                .sort()
+            ),
+          })
+        );
+      } else {
+        // Remove promotion from sessionStorage if code is empty (remove promotion)
+        sessionStorage.removeItem("promotionInfo");
+      }
     };
 
     // Use setTimeout to batch the state updates
@@ -344,45 +373,49 @@ const BookingCheckPage = () => {
       setIsValidatingPromotionBeforeBooking(true);
     }, 300);
 
-    try {
-      const res = await axios.post(`${API_BASE_URL}/api/promotions/apply`, {
+    return new Promise((resolve) => {
+      dispatch(applyPromotion({
         code: promotionCode,
         orderAmount: subtotal,
-      });
+        onSuccess: (data) => {
+          // Clear timeout and loading state
+          clearTimeout(loadingTimeoutId);
+          if (shouldShowLoading) {
+            setIsValidatingPromotionBeforeBooking(false);
+          }
 
-      // Clear timeout and loading state
-      clearTimeout(loadingTimeoutId);
-      if (shouldShowLoading) {
-        setIsValidatingPromotionBeforeBooking(false);
-      }
+          if (!data.valid) {
+            resolve({
+              valid: false,
+              message: data.message || "Promotion is no longer valid",
+            });
+            return;
+          }
 
-      if (!res.data.valid) {
-        return {
-          valid: false,
-          message: res.data.message || "Promotion is no longer valid",
-        };
-      }
+          if (data.discount !== promotionDiscount) {
+            resolve({
+              valid: false,
+              message:
+                "Promotion discount has changed. Please reapply the promotion.",
+            });
+            return;
+          }
 
-      if (res.data.discount !== promotionDiscount) {
-        return {
-          valid: false,
-          message:
-            "Promotion discount has changed. Please reapply the promotion.",
-        };
-      }
-
-      return { valid: true };
-    } catch (err) {
-      // Clear timeout and loading state
-      clearTimeout(loadingTimeoutId);
-      if (shouldShowLoading) {
-        setIsValidatingPromotionBeforeBooking(false);
-      }
-      return {
-        valid: false,
-        message: "Unable to validate promotion. Please try again.",
-      };
-    }
+          resolve({ valid: true });
+        },
+        onFailed: (error) => {
+          // Clear timeout and loading state
+          clearTimeout(loadingTimeoutId);
+          if (shouldShowLoading) {
+            setIsValidatingPromotionBeforeBooking(false);
+          }
+          resolve({
+            valid: false,
+            message: "Unable to validate promotion. Please try again.",
+          });
+        }
+      }));
+    });
   };
 
   // Function to check hotel status before booking (optimized to avoid unnecessary loading states)

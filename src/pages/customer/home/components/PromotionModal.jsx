@@ -1,234 +1,119 @@
 import React, { useState, useEffect } from "react";
-import { Modal, Button, Card, Badge, Spinner } from "react-bootstrap";
+import { Modal, Button, Card, Badge, Spinner, Form, ProgressBar } from "react-bootstrap";
 import { FaTag, FaTimes, FaCheck } from "react-icons/fa";
-import axios from "axios";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchAllPromotions, applyPromotion, clearAppliedPromotion } from "../../../../redux/promotion/actions";
 import Utils from "../../../../utils/Utils";
-import getApiUrl from "../../../../utils/apiConfig"; // Add this import
 import "../../../../css/PromotionModal.css";
 
 const PromotionModal = ({ show, onHide, totalPrice, onApplyPromotion, currentPromotionId }) => {
-  const [promotions, setPromotions] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [selectedPromotion, setSelectedPromotion] = useState(null);
-  const [applying, setApplying] = useState(false);
+  const dispatch = useDispatch();
+  const {
+    allPromotions: promotions,
+    allPromotionsLoading: loading,
+    allPromotionsError,
+    applyLoading: applying,
+    applyError,
+    appliedPromotion
+  } = useSelector(state => state.Promotion);
 
-  const API_BASE_URL = getApiUrl(); // Add this line
+  const [selectedPromotion, setSelectedPromotion] = useState(null);
+  const [manualCode, setManualCode] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
     if (show && totalPrice > 0) {
-      fetchPromotions();
-    }
-  }, [show, totalPrice]);
+      // Clear any previous applied promotion state when modal opens
+      dispatch(clearAppliedPromotion());
+      setSelectedPromotion(null);
+      setManualCode('');
+      setErrorMessage('');
 
-  const fetchPromotions = async () => {
-    setLoading(true);
-    try {
-      let promotionList = [];
-      try {
-        console.log("Fetching promotions from API...");
-        // Replace hardcoded URL with environment-based URL
-        const response = await axios.get(`${API_BASE_URL}/api/promotions`);
-        console.log("API Response:", response.data);
-        
-        promotionList = response.data.promotions || response.data.data || response.data || [];
-        console.log("Promotion list from API:", promotionList);
-        
-        if (!Array.isArray(promotionList) || promotionList.length === 0) {
-          console.log("API returned empty or invalid data, using mock data");
-          throw new Error("No promotions from API");
+      dispatch(fetchAllPromotions({
+        totalPrice,
+        onSuccess: (data) => {
+          console.log("✅ Promotions fetched successfully:", data);
+        },
+        onFailed: (error) => {
+          console.error("❌ Failed to fetch promotions:", error);
         }
-      } catch (apiError) {
-        // Mock data remains the same
-        console.log("API Error:", apiError.message, "- Using mock promotion data");
-        promotionList = [
-          {
-            _id: "1",
-            code: "SAVE20",
-            description: "Save $20 on orders over $100",
-            discountType: "fixed",
-            discountValue: 20,
-            minOrderAmount: 100,
-            maxDiscount: 20,
-            expiryDate: "2025-12-31",
-            isActive: true
-          },
-          {
-            _id: "2", 
-            code: "PERCENT10",
-            description: "10% off on all bookings",
-            discountType: "percentage",
-            discountValue: 10,
-            minOrderAmount: 50,
-            maxDiscount: 50,
-            expiryDate: "2025-12-31",
-            isActive: true
-          },
-          {
-            _id: "3",
-            code: "NEWUSER50",
-            description: "Special discount for new users",
-            discountType: "fixed", 
-            discountValue: 50,
-            minOrderAmount: 200,
-            maxDiscount: 50,
-            expiryDate: "2025-06-30",
-            isActive: true
-          },
-          {
-            _id: "4",
-            code: "EXPIRED",
-            description: "This promotion has expired",
-            discountType: "fixed",
-            discountValue: 30,
-            minOrderAmount: 80,
-            maxDiscount: 30,
-            expiryDate: "2024-12-31",
-            isActive: false
-          }
-        ];
-      }
-      
-      console.log("Total price for validation:", totalPrice);
-      console.log("Processing", promotionList.length, "promotions");
-      
-      const validatedPromotions = await Promise.all(
-        promotionList.map(async (promo, index) => {
-          console.log(`Validating promotion ${index + 1}:`, promo.code);
-          
-          try {
-            // Replace hardcoded URL with environment-based URL
-            const validateRes = await axios.post(`${API_BASE_URL}/api/promotions/apply`, {
-              code: promo.code,
-              orderAmount: totalPrice,
-            });
-            console.log(`API validation result for ${promo.code}:`, validateRes.data);
-            
-            return {
-              ...promo,
-              isValid: validateRes.data.valid,
-              discount: validateRes.data.discount || 0,
-              message: validateRes.data.message || "",
-            };
-          } catch (err) {
-            console.log(`API validation failed for ${promo.code}, using mock validation`);
-            
-            // Mock validation logic nếu API không có
-            const now = new Date();
-            const startDate = new Date(promo.startDate);
-            const endDate = new Date(promo.endDate);
-            
-            const isInTimeRange = now >= startDate && now <= endDate;
-            const meetsMinOrder = totalPrice >= (promo.minOrderAmount || 0);
-            const isActive = promo.isActive !== false;
-            
-            const isValid = isInTimeRange && meetsMinOrder && isActive;
-            
-            let discount = 0;
-            let message = "";
-            
-            if (isValid) {
-              if (promo.discountType === "percentage") {
-                discount = Math.min((totalPrice * promo.discountValue) / 100, promo.maxDiscount || Infinity);
-              } else {
-                discount = Math.min(promo.discountValue, promo.maxDiscount || Infinity);
-              }
-              message = `Save ${discount}`;
-            } else {
-              if (!isInTimeRange) {
-                if (now < startDate) message = "Promotion has not started yet";
-                else if (now > endDate) message = "Promotion has expired";
-                else message = "Promotion is not available";
-              } else if (!meetsMinOrder) message = `Minimum order $${promo.minOrderAmount} required`;
-              else if (!isActive) message = "Promotion is not active";
-              else message = "Not applicable";
-            }
-            
-            console.log(`Mock validation for ${promo.code}:`, { isValid, discount, message });
-            
-            return {
-              ...promo,
-              isValid,
-              discount,
-              message,
-            };
-          }
-        })
-      );
-      
-      console.log("Final validated promotions:", validatedPromotions);
-      
-      // Chỉ hiển thị promotion có thể dùng được hoặc sắp có thể dùng (chưa bắt đầu)
-      // Ẩn những promotion đã hết hạn, không đủ điều kiện, hoặc không active
-      const displayPromotions = validatedPromotions.filter(promo => {
-        const now = new Date();
-        const startDate = new Date(promo.startDate || promo.expiryDate || '2025-01-01');
-        const endDate = new Date(promo.endDate || promo.expiryDate || '2025-12-31');
-        
-        // Chỉ hiển thị nếu: promotion chưa hết hạn và đang active
-        const notExpired = now <= endDate;
-        const isActive = promo.isActive !== false;
-        
-        return notExpired && isActive;
-      });
-      
-      console.log("Display promotions:", displayPromotions.length, "of", validatedPromotions.length);
-      console.log("Available now:", displayPromotions.filter(p => p.isValid).length);
-      console.log("Starting soon:", displayPromotions.filter(p => !p.isValid && p.message?.includes("not started")).length);
-      
-      // Sắp xếp promotions: Available trước, starting soon sau, và theo discount giảm dần
-      const sortedPromotions = displayPromotions.sort((a, b) => {
-        // Available promotions lên trước
-        if (a.isValid && !b.isValid) return -1;
-        if (!a.isValid && b.isValid) return 1;
-        
-        // Trong cùng loại, sắp xếp theo discount giảm dần
-        return b.discount - a.discount;
-      });
-      
-      setPromotions(sortedPromotions);
-    } catch (error) {
-      console.error("Error fetching promotions:", error);
-      setPromotions([]);
+      }));
     }
-    setLoading(false);
-  };
+  }, [show, totalPrice, dispatch]);
 
-  const handleApplyPromotion = async (promotion) => {
-    if (!promotion.isValid) return;
-    
-    setApplying(true);
-    try {
-      try {
-        // Replace hardcoded URL with environment-based URL
-        const response = await axios.post(`${API_BASE_URL}/api/promotions/apply`, {
-          code: promotion.code,
-          orderAmount: totalPrice,
-        });
-        
-        if (response.data.valid) {
-          onApplyPromotion({
-            code: promotion.code,
-            discount: response.data.discount,
-            message: `Promotion applied: -${Utils.formatCurrency(response.data.discount)}`,
-            promotionId: response.data.promotionId,
-          });
-          onHide();
-        }
-      } catch (apiError) {
-        // Mock logic remains the same
-        console.log("Using mock promotion application");
-        onApplyPromotion({
-          code: promotion.code,
-          discount: promotion.discount,
-          message: `Promotion applied: -${Utils.formatCurrency(promotion.discount)}`,
-          promotionId: promotion._id,
-        });
-        onHide();
-      }
-    } catch (error) {
-      console.error("Error applying promotion:", error);
+  // Handle apply promotion success
+  useEffect(() => {
+    if (appliedPromotion && selectedPromotion) {
+      onApplyPromotion({
+        code: selectedPromotion.code, // Use code from selected promotion
+        discount: appliedPromotion.discount,
+        message: `Promotion applied: -${Utils.formatCurrency(appliedPromotion.discount)}`,
+        promotionId: appliedPromotion.promotionId || appliedPromotion._id,
+      });
+      onHide();
+      // Reset selected promotion and clear applied promotion from Redux
+      setSelectedPromotion(null);
+      dispatch(clearAppliedPromotion());
     }
-    setApplying(false);
+  }, [appliedPromotion, selectedPromotion, onApplyPromotion, onHide, dispatch]);
+
+  const handleApplyPromotion = (promotion) => {
+    // For manual code input, skip frontend validation and let backend handle it
+    if (promotion._id && promotion._id.startsWith('manual-')) {
+      console.log("Manual code entered, skipping frontend validation:", promotion.code);
+    } else {
+      // Check if promotion is valid based on current data (only for promotions from list)
+      const now = new Date();
+      const startDate = new Date(promotion.startDate);
+      const endDate = new Date(promotion.endDate);
+
+      const isInTimeRange = now >= startDate && now <= endDate;
+      const meetsMinOrder = totalPrice >= (promotion.minOrderAmount || 0);
+      const isActive = promotion.isActive !== false;
+      const hasUsageLeft = promotion.userCanUse !== false; // Check if user can still use this promotion
+      const isValid = isInTimeRange && meetsMinOrder && isActive && hasUsageLeft;
+
+      if (!isValid) {
+        console.log("Promotion is not valid:", promotion.code, {
+          isInTimeRange,
+          meetsMinOrder,
+          isActive,
+          hasUsageLeft,
+          totalPrice,
+          minOrderAmount: promotion.minOrderAmount,
+          userCanUse: promotion.userCanUse,
+          userUsedCount: promotion.userUsedCount,
+          maxUsagePerUser: promotion.maxUsagePerUser
+        });
+        return;
+      }
+    }
+
+    // Set selected promotion so we can use it when apply succeeds
+    setSelectedPromotion(promotion);
+
+    dispatch(applyPromotion({
+      code: promotion.code,
+      orderAmount: totalPrice,
+      onSuccess: (data) => {
+        console.log("✅ Promotion applied successfully:", data);
+      },
+      onFailed: (error) => {
+        console.error("❌ Failed to apply promotion:", error);
+        // Reset selected promotion on failure
+        setSelectedPromotion(null);
+        // Set error message for display
+        setErrorMessage(error);
+        // Clear error after 5 seconds
+        setTimeout(() => setErrorMessage(''), 5000);
+      },
+      onError: (error) => {
+        console.error("❌ Server error applying promotion:", error);
+        setSelectedPromotion(null);
+        setErrorMessage("Server error occurred. Please try again.");
+        setTimeout(() => setErrorMessage(''), 5000);
+      }
+    }));
   };
 
   const handleRemovePromotion = () => {
@@ -239,6 +124,21 @@ const PromotionModal = ({ show, onHide, totalPrice, onApplyPromotion, currentPro
       promotionId: null,
     });
     onHide();
+  };
+
+
+
+  const handleApplyManualCode = () => {
+    if (!manualCode.trim()) return;
+
+    // Create a fake promotion object for manual code
+    const manualPromotion = {
+      code: manualCode.trim(),
+      _id: 'manual-' + manualCode.trim()
+    };
+
+    setSelectedPromotion(manualPromotion);
+    handleApplyPromotion(manualPromotion);
   };
 
   return (
@@ -269,6 +169,19 @@ const PromotionModal = ({ show, onHide, totalPrice, onApplyPromotion, currentPro
           <div className="text-center py-4">
             <Spinner animation="border" variant="light" />
             <div className="mt-2">Loading promotions...</div>
+          </div>
+        ) : allPromotionsError ? (
+          <div className="text-center py-4">
+            <div className="text-danger mb-2">Failed to load promotions</div>
+            <div className="text-muted small">{allPromotionsError}</div>
+            <Button
+              variant="outline-light"
+              size="sm"
+              className="mt-2"
+              onClick={() => dispatch(fetchAllPromotions({ totalPrice }))}
+            >
+              Retry
+            </Button>
           </div>
         ) : (
           <>
@@ -305,11 +218,85 @@ const PromotionModal = ({ show, onHide, totalPrice, onApplyPromotion, currentPro
               </div>
             )}
 
+            {/* Manual promotion code input */}
+            <div className="mb-4">
+              <h6 className="mb-3">Enter Promotion Code</h6>
+              <Card style={{ backgroundColor: "rgba(255,255,255,0.05)", borderColor: "rgba(255,255,255,0.2)" }}>
+                <Card.Body className="py-3">
+                  <div className="d-flex gap-2">
+                    <Form.Control
+                      type="text"
+                      placeholder="Enter promotion code..."
+                      value={manualCode}
+                      onChange={(e) => {
+                        setManualCode(e.target.value.toUpperCase());
+                        // Clear error message when user starts typing
+                        if (errorMessage) setErrorMessage('');
+                      }}
+                      style={{
+                        backgroundColor: "rgba(255,255,255,0.1)",
+                        borderColor: "rgba(255,255,255,0.3)",
+                        color: "white"
+                      }}
+                      disabled={applying}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && manualCode.trim() && !applying) {
+                          handleApplyManualCode();
+                        }
+                      }}
+                    />
+                    <Button
+                      variant="primary"
+                      onClick={handleApplyManualCode}
+                      disabled={applying || !manualCode.trim()}
+                    >
+                      {applying ? (
+                        <>
+                          <Spinner size="sm" className="me-1" />
+                          Applying...
+                        </>
+                      ) : (
+                        'Apply'
+                      )}
+                    </Button>
+                  </div>
+                  <small className="text-muted mt-2 d-block">
+                    Enter a promotion code to apply it to your order
+                  </small>
+
+                  {/* Error message display */}
+                  {errorMessage && (
+                    <div className="alert alert-danger mt-2 mb-0" role="alert">
+                      <small>{errorMessage}</small>
+                    </div>
+                  )}
+                </Card.Body>
+              </Card>
+            </div>
+
             {/* Promotions section */}
             <h6 className="mb-3">
-              Available Promotions 
+              Available Promotions
               <span className="small ms-2" style={{color: 'rgba(255,255,255,0.6)'}}>
-                ({promotions.filter(p => p.isValid).length} ready, {promotions.filter(p => !p.isValid).length} starting soon)
+                ({promotions.filter(p => {
+                  const now = new Date();
+                  const startDate = new Date(p.startDate);
+                  const endDate = new Date(p.endDate);
+                  const isInTimeRange = now >= startDate && now <= endDate;
+                  const meetsMinOrder = totalPrice >= (p.minOrderValue || p.minOrderAmount || 0);
+                  return isInTimeRange && meetsMinOrder && p.isActive && p.userCanUse !== false;
+                }).length} ready, {promotions.filter(p => {
+                  const now = new Date();
+                  const startDate = new Date(p.startDate);
+                  const endDate = new Date(p.endDate);
+                  const isInTimeRange = now >= startDate && now <= endDate;
+                  const meetsMinOrder = totalPrice >= (p.minOrderValue || p.minOrderAmount || 0);
+                  return isInTimeRange && meetsMinOrder && p.isActive && p.userCanUse === false;
+                }).length} used up, {promotions.filter(p => {
+                  const now = new Date();
+                  const startDate = new Date(p.startDate);
+                  return now < startDate && p.isActive;
+                }).length} starting soon)
               </span>
             </h6>
             {promotions.length === 0 ? (
@@ -320,19 +307,60 @@ const PromotionModal = ({ show, onHide, totalPrice, onApplyPromotion, currentPro
             ) : (
               <>
                 {/* Available promotions */}
-                {promotions.filter(p => p.isValid).length > 0 && (
+                {promotions.filter(p => {
+                  const now = new Date();
+                  const startDate = new Date(p.startDate);
+                  const endDate = new Date(p.endDate);
+                  const isInTimeRange = now >= startDate && now <= endDate;
+                  const meetsMinOrder = totalPrice >= (p.minOrderValue || p.minOrderAmount || 0);
+                  return isInTimeRange && meetsMinOrder && p.isActive;
+                }).length > 0 && (
                   <div className="row g-3 mb-4">
-                    {promotions.filter(p => p.isValid).map((promotion) => (
+                    {promotions.filter(p => {
+                      const now = new Date();
+                      const startDate = new Date(p.startDate);
+                      const endDate = new Date(p.endDate);
+                      const isInTimeRange = now >= startDate && now <= endDate;
+                      const meetsMinOrder = totalPrice >= (p.minOrderAmount || 0);
+                      return isInTimeRange && meetsMinOrder && p.isActive;
+                    }).sort((a, b) => {
+                      // Sort by user availability: available first, then used up
+                      if (a.userCanUse !== false && b.userCanUse === false) return -1;
+                      if (a.userCanUse === false && b.userCanUse !== false) return 1;
+
+                      // Within same availability, sort by discount value (higher first)
+                      const discountA = a.discountType === 'PERCENTAGE' ? a.discountValue : a.discountValue;
+                      const discountB = b.discountType === 'PERCENTAGE' ? b.discountValue : b.discountValue;
+                      return discountB - discountA;
+                    }).map((promotion) => {
+                      // Calculate discount for display
+                      let discount = 0;
+                      if (promotion.discountType === "PERCENTAGE") {
+                        discount = Math.min((totalPrice * promotion.discountValue) / 100, promotion.maxDiscountAmount || Infinity);
+                      } else {
+                        discount = Math.min(promotion.discountValue, promotion.maxDiscountAmount || Infinity);
+                      }
+
+                      return (
                       <div key={promotion._id} className="col-12">
-                        <Card 
-                          className={`promotion-card ${currentPromotionId === promotion._id ? 'current' : ''}`}
-                          style={{ 
-                            backgroundColor: currentPromotionId === promotion._id ? "rgba(40, 167, 69, 0.2)" : "rgba(255,255,255,0.1)",
-                            borderColor: currentPromotionId === promotion._id ? "#28a745" : "rgba(255,255,255,0.3)",
-                            cursor: "pointer",
+                        <Card
+                          className={`promotion-card ${currentPromotionId === promotion._id ? 'current' : ''} ${promotion.userCanUse === false ? 'disabled' : ''}`}
+                          style={{
+                            backgroundColor: promotion.userCanUse === false
+                              ? "rgba(108, 117, 125, 0.2)"
+                              : currentPromotionId === promotion._id
+                                ? "rgba(40, 167, 69, 0.2)"
+                                : "rgba(255,255,255,0.1)",
+                            borderColor: promotion.userCanUse === false
+                              ? "rgba(108, 117, 125, 0.5)"
+                              : currentPromotionId === promotion._id
+                                ? "#28a745"
+                                : "rgba(255,255,255,0.3)",
+                            cursor: promotion.userCanUse === false ? "not-allowed" : "pointer",
+                            opacity: promotion.userCanUse === false ? 0.6 : 1,
                             transition: "all 0.3s ease"
                           }}
-                          onClick={() => handleApplyPromotion(promotion)}
+                          onClick={() => promotion.userCanUse !== false && handleApplyPromotion(promotion)}
                         >
                           <Card.Body className="py-3">
                             <div className="d-flex justify-content-between align-items-start">
@@ -343,33 +371,106 @@ const PromotionModal = ({ show, onHide, totalPrice, onApplyPromotion, currentPro
                                   {currentPromotionId === promotion._id && (
                                     <Badge bg="success" className="ms-2">Applied</Badge>
                                   )}
-                                  <Badge bg="success" className="ms-2">Available</Badge>
+                                  {promotion.userCanUse !== false && (
+                                    <Badge bg="success" className="ms-2">Available</Badge>
+                                  )}
+                                  {promotion.userCanUse === false && (
+                                    <Badge bg="secondary" className="ms-2">Used Up</Badge>
+                                  )}
                                 </div>
+
+                                {/* Usage information */}
+                                {promotion.maxUsagePerUser && (
+                                  <div className="mb-2">
+                                    <small style={{color: 'rgba(255,255,255,0.8)'}}>
+                                      <strong>Your Usage:</strong> {promotion.userUsedCount || 0}/{promotion.maxUsagePerUser}
+                                      {promotion.userCanUse === false && (
+                                        <span className="text-warning ms-1">(Limit reached)</span>
+                                      )}
+                                    </small>
+                                  </div>
+                                )}
+
+                                {/* Global usage information with progress bar */}
+                                {promotion.usageLimit && (
+                                  <div className="mb-2">
+                                    <div className="d-flex justify-content-between align-items-center mb-1">
+                                      <small style={{color: 'rgba(255,255,255,0.7)'}}>
+                                        <strong>Global Usage:</strong>
+                                      </small>
+                                      <small style={{color: 'rgba(255,255,255,0.7)'}}>
+                                        {Math.round(((promotion.usedCount || 0) / promotion.usageLimit) * 100)}%
+                                      </small>
+                                    </div>
+                                    <ProgressBar
+                                      now={Math.min(((promotion.usedCount || 0) / promotion.usageLimit) * 100, 100)}
+                                      variant={
+                                        ((promotion.usedCount || 0) / promotion.usageLimit) >= 1.0 ? 'danger' :
+                                        ((promotion.usedCount || 0) / promotion.usageLimit) >= 0.9 ? 'danger' :
+                                        ((promotion.usedCount || 0) / promotion.usageLimit) >= 0.7 ? 'warning' :
+                                        ((promotion.usedCount || 0) / promotion.usageLimit) >= 0.5 ? 'info' : 'success'
+                                      }
+                                      style={{
+                                        height: '8px',
+                                        backgroundColor: 'rgba(255,255,255,0.2)',
+                                        borderRadius: '4px',
+                                        overflow: 'hidden'
+                                      }}
+                                      animated={((promotion.usedCount || 0) / promotion.usageLimit) >= 0.9}
+                                    />
+                                    {(() => {
+                                      const usagePercent = ((promotion.usedCount || 0) / promotion.usageLimit) * 100;
+                                      if (promotion.usedCount >= promotion.usageLimit) {
+                                        return (
+                                          <small className="text-danger mt-1 d-block">
+                                            <strong>🚫 Exhausted</strong>
+                                          </small>
+                                        );
+                                      } else if (usagePercent >= 90) {
+                                        return (
+                                          <small className="text-warning mt-1 d-block">
+                                            <strong>⚠️ Almost full</strong>
+                                          </small>
+                                        );
+                                      }
+                                      return null;
+                                    })()}
+                                  </div>
+                                )}
+
+                                {/* Show unlimited usage info */}
+                                {!promotion.usageLimit && (
+                                  <div className="mb-2">
+                                    <small style={{color: 'rgba(255,255,255,0.7)'}}>
+                                      <strong>Global Usage:</strong> Unlimited
+                                    </small>
+                                  </div>
+                                )}
                                 
                                 <p className="mb-2 small" style={{color: 'rgba(255,255,255,0.7)'}}>{promotion.description}</p>
                                 
                                 <div className="d-flex justify-content-between align-items-center">
                                   <div>
                                     <span className="text-success fw-bold">
-                                      Save {Utils.formatCurrency(promotion.discount)}
+                                      Save {Utils.formatCurrency(discount)}
                                     </span>
                                   </div>
-                                  
+
                                   <div className="text-end">
                                     <div className="small">
-                                      {promotion.minOrderAmount && (
+                                      {(promotion.minOrderValue || promotion.minOrderAmount) && (
                                         <div className="text-success">
-                                          Min: {Utils.formatCurrency(promotion.minOrderAmount)} ✓
+                                          Min: {Utils.formatCurrency(promotion.minOrderValue || promotion.minOrderAmount)} ✓
                                         </div>
                                       )}
-                                      {promotion.maxDiscount && (
+                                      {(promotion.maxDiscountAmount || promotion.maxDiscount) && (
                                         <div style={{color: 'rgba(255,255,255,0.6)'}}>
-                                          Max: {Utils.formatCurrency(promotion.maxDiscount)}
+                                          Max: {Utils.formatCurrency(promotion.maxDiscountAmount || promotion.maxDiscount)}
                                         </div>
                                       )}
-                                      {promotion.expiryDate && (
+                                      {(promotion.endDate || promotion.expiryDate) && (
                                         <div className="text-success">
-                                          Expires: {new Date(promotion.expiryDate).toLocaleDateString()} ✓
+                                          Expires: {new Date(promotion.endDate || promotion.expiryDate).toLocaleDateString()} ✓
                                         </div>
                                       )}
                                     </div>
@@ -380,18 +481,36 @@ const PromotionModal = ({ show, onHide, totalPrice, onApplyPromotion, currentPro
                           </Card.Body>
                         </Card>
                       </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
 
                 {/* Starting soon promotions */}
-                {promotions.filter(p => !p.isValid).length > 0 && (
+                {promotions.filter(p => {
+                  const now = new Date();
+                  const startDate = new Date(p.startDate);
+                  return now < startDate && p.isActive;
+                }).length > 0 && (
                   <>
                     <h6 className="mb-3 text-warning">
-                      Starting Soon ({promotions.filter(p => !p.isValid).length})
+                      Starting Soon ({promotions.filter(p => {
+                        const now = new Date();
+                        const startDate = new Date(p.startDate);
+                        return now < startDate && p.isActive;
+                      }).length})
                     </h6>
                     <div className="row g-3">
-                      {promotions.filter(p => !p.isValid).map((promotion) => (
+                      {promotions.filter(p => {
+                        const now = new Date();
+                        const startDate = new Date(p.startDate);
+                        return now < startDate && p.isActive;
+                      }).sort((a, b) => {
+                        // Sort upcoming promotions by start date (earliest first)
+                        const startDateA = new Date(a.startDate);
+                        const startDateB = new Date(b.startDate);
+                        return startDateA - startDateB;
+                      }).map((promotion) => (
                         <div key={promotion._id} className="col-12">
                           <Card 
                             className="promotion-card disabled"
@@ -417,7 +536,10 @@ const PromotionModal = ({ show, onHide, totalPrice, onApplyPromotion, currentPro
                                   <div className="d-flex justify-content-between align-items-center">
                                     <div>
                                       <span className="text-warning small fw-bold">
-                                        {promotion.message}
+                                        {promotion.discountType === 'PERCENTAGE'
+                                          ? `${promotion.discountValue}% OFF`
+                                          : `${Utils.formatCurrency(promotion.discountValue)} OFF`
+                                        }
                                       </span>
                                     </div>
                                     
@@ -434,9 +556,28 @@ const PromotionModal = ({ show, onHide, totalPrice, onApplyPromotion, currentPro
                                             Max: {Utils.formatCurrency(promotion.maxDiscount)}
                                           </div>
                                         )}
-                                        {(promotion.startDate || promotion.expiryDate) && (
+                                        {promotion.startDate && (
                                           <div className="text-warning">
-                                            Starts: {new Date(promotion.startDate || promotion.expiryDate).toLocaleDateString()}
+                                            Starts: {new Date(promotion.startDate).toLocaleDateString()}
+                                            <br />
+                                            <small style={{color: 'rgba(255,193,7,0.8)'}}>
+                                              {(() => {
+                                                const now = new Date();
+                                                const startDate = new Date(promotion.startDate);
+                                                const diffTime = startDate - now;
+                                                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                                                if (diffDays === 1) return 'Starts tomorrow';
+                                                if (diffDays > 1) return `Starts in ${diffDays} days`;
+                                                if (diffDays === 0) return 'Starts today';
+                                                return 'Starting soon';
+                                              })()}
+                                            </small>
+                                          </div>
+                                        )}
+                                        {promotion.endDate && (
+                                          <div style={{color: 'rgba(255,255,255,0.6)'}}>
+                                            Ends: {new Date(promotion.endDate).toLocaleDateString()}
                                           </div>
                                         )}
                                       </div>
