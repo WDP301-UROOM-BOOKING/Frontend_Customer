@@ -111,23 +111,14 @@ function* getUserPromotions() {
           ];
         }
 
-        // Filter to show only active and upcoming promotions
-        const now = new Date();
+        // Backend already filters out expired and inactive promotions
+        // We only need to filter out promotions that reached usage limit
         const relevantPromotions = promotions.filter(promo => {
-          const startDate = new Date(promo.startDate);
-          const endDate = new Date(promo.endDate);
-          
-          if (now < startDate) {
-            return promo.isActive; // upcoming
-          } else if (now > endDate) {
-            return false; // expired
-          } else if (!promo.isActive) {
-            return false; // inactive
-          } else if (promo.usageLimit && promo.usedCount >= promo.usageLimit) {
-            return false; // used_up
-          } else {
-            return promo.isActive; // active
+          // Filter out promotions that reached their usage limit
+          if (promo.usageLimit && promo.usedCount >= promo.usageLimit) {
+            return false; // used_up at global level
           }
+          return true;
         });
         
         // Apply client-side filtering if needed
@@ -141,6 +132,7 @@ function* getUserPromotions() {
         }
         
         if (status) {
+          const now = new Date(); // Define now for status filtering
           filteredPromotions = filteredPromotions.filter(promo => {
             if (status === "active") {
               const startDate = new Date(promo.startDate);
@@ -239,6 +231,7 @@ function* fetchAllPromotions() {
         }
 
         // Filter promotions based on totalPrice and availability
+        // Include both active and upcoming (coming soon) promotions for modal
         if (totalPrice) {
           promotions = promotions.filter(promo => {
             const now = new Date();
@@ -246,8 +239,7 @@ function* fetchAllPromotions() {
             const endDate = new Date(promo.endDate);
 
             return promo.isActive &&
-                   now >= startDate &&
-                   now <= endDate &&
+                   now <= endDate && // Not expired (include upcoming and active)
                    (!promo.minOrderValue || totalPrice >= promo.minOrderValue) &&
                    (!promo.usageLimit || promo.usedCount < promo.usageLimit);
           });

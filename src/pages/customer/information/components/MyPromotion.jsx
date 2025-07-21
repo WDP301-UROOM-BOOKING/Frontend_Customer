@@ -17,9 +17,23 @@ const MyPromotion = () => {
   console.log("🔍 Component: Redux state:", { promotions, loading, error });
   console.log("🔍 Component: promotions type:", typeof promotions, "isArray:", Array.isArray(promotions));
 
-  // Ensure promotions is always an array and filter only claimed promotions
+  // Ensure promotions is always an array and filter promotions for My Promotions
   const allPromotions = Array.isArray(promotions) ? promotions : [];
-  const safePromotions = allPromotions.filter(promotion => promotion.isClaimed === true);
+  const safePromotions = allPromotions.filter(promotion => {
+    // Filter out expired promotions
+    const now = new Date();
+    const endDate = new Date(promotion.endDate);
+    if (now > endDate) {
+      return false; // Don't show expired promotions
+    }
+
+    // PUBLIC promotions are available to all users (no need to claim)
+    if (promotion.type === 'PUBLIC') {
+      return true;
+    }
+    // PRIVATE promotions must be claimed
+    return promotion.isClaimed === true;
+  });
   
   // Pagination states
   const pageParam = searchParams.get("page");
@@ -114,88 +128,174 @@ const MyPromotion = () => {
     switch (filters.sortOption) {
       case "availability":
         filtered.sort((a, b) => {
-          // Priority 1: PUBLIC promotions first, PRIVATE promotions last
-          if (a.type === 'PUBLIC' && b.type === 'PRIVATE') return -1;
-          if (a.type === 'PRIVATE' && b.type === 'PUBLIC') return 1;
+          // Priority 1: Sort by status only (ignore PUBLIC/PRIVATE)
+          const statusA = getPromotionStatus(a).status;
+          const statusB = getPromotionStatus(b).status;
 
-          // Priority 2: Within same type, available first, used up last
-          const canUseA = a.userCanUse !== false;
-          const canUseB = b.userCanUse !== false;
+          // Status priority: active (available) > upcoming (coming soon) > used up
+          const statusPriority = {
+            'active': 1,        // Available first
+            'upcoming': 2,      // Coming soon second
+            'used up': 3,       // Used up last
+            'expired': 4,       // Expired (should be filtered out but just in case)
+            'inactive': 5       // Inactive (should be filtered out but just in case)
+          };
+          const priorityA = statusPriority[statusA] || 6;
+          const priorityB = statusPriority[statusB] || 6;
 
-          if (canUseA && !canUseB) return -1;
-          if (!canUseA && canUseB) return 1;
+          if (priorityA !== priorityB) {
+            return priorityA - priorityB;
+          }
 
-          // Priority 3: Within same availability, sort by claimed date (newest first)
+          // Priority 2: Within same status, sort by claimed date (newest first)
           return new Date(b.claimedAt || b.createdAt) - new Date(a.claimedAt || a.createdAt);
         });
         break;
       case "discount-high":
         filtered.sort((a, b) => {
-          // Active first, then upcoming
+          // Priority 1: Sort by status first (available > coming soon > used up)
           const statusA = getPromotionStatus(a).status;
           const statusB = getPromotionStatus(b).status;
-          if (statusA === "active" && statusB === "upcoming") return -1;
-          if (statusA === "upcoming" && statusB === "active") return 1;
-          // Then by discount value
+
+          const statusPriority = {
+            'active': 1,        // Available first
+            'upcoming': 2,      // Coming soon second
+            'used up': 3,       // Used up last
+            'expired': 4,       // Expired
+            'inactive': 5       // Inactive
+          };
+          const priorityA = statusPriority[statusA] || 6;
+          const priorityB = statusPriority[statusB] || 6;
+
+          if (priorityA !== priorityB) {
+            return priorityA - priorityB;
+          }
+
+          // Priority 2: Within same status, sort by discount value (high to low)
           return b.discountValue - a.discountValue;
         });
         break;
       case "discount-low":
         filtered.sort((a, b) => {
-          // Active first, then upcoming
+          // Priority 1: Sort by status first (available > coming soon > used up)
           const statusA = getPromotionStatus(a).status;
           const statusB = getPromotionStatus(b).status;
-          if (statusA === "active" && statusB === "upcoming") return -1;
-          if (statusA === "upcoming" && statusB === "active") return 1;
-          // Then by discount value
+
+          const statusPriority = {
+            'active': 1,        // Available first
+            'upcoming': 2,      // Coming soon second
+            'used up': 3,       // Used up last
+            'expired': 4,       // Expired
+            'inactive': 5       // Inactive
+          };
+          const priorityA = statusPriority[statusA] || 6;
+          const priorityB = statusPriority[statusB] || 6;
+
+          if (priorityA !== priorityB) {
+            return priorityA - priorityB;
+          }
+
+          // Priority 2: Within same status, sort by discount value (low to high)
           return a.discountValue - b.discountValue;
         });
         break;
       case "date-desc":
         filtered.sort((a, b) => {
-          // PUBLIC first, then PRIVATE
+          // Priority 1: Sort by status first (available > coming soon > used up)
+          const statusA = getPromotionStatus(a).status;
+          const statusB = getPromotionStatus(b).status;
+
+          const statusPriority = {
+            'active': 1,        // Available first
+            'upcoming': 2,      // Coming soon second
+            'used up': 3,       // Used up last
+            'expired': 4,       // Expired
+            'inactive': 5       // Inactive
+          };
+          const priorityA = statusPriority[statusA] || 6;
+          const priorityB = statusPriority[statusB] || 6;
+
+          if (priorityA !== priorityB) {
+            return priorityA - priorityB;
+          }
+
+          // Priority 2: Within same status, PUBLIC first, then PRIVATE
           if (a.type === 'PUBLIC' && b.type === 'PRIVATE') return -1;
           if (a.type === 'PRIVATE' && b.type === 'PUBLIC') return 1;
 
-          // Within same type, available first
-          const canUseA = a.userCanUse !== false;
-          const canUseB = b.userCanUse !== false;
-          if (canUseA && !canUseB) return -1;
-          if (!canUseA && canUseB) return 1;
-
-          // Then by claimed date (newest first)
+          // Priority 3: Then by claimed date (newest first)
           return new Date(b.claimedAt || b.createdAt) - new Date(a.claimedAt || a.createdAt);
         });
         break;
       case "date-asc":
         filtered.sort((a, b) => {
-          // Active first, then upcoming
+          // Priority 1: Sort by status first (available > coming soon > used up)
           const statusA = getPromotionStatus(a).status;
           const statusB = getPromotionStatus(b).status;
-          if (statusA === "active" && statusB === "upcoming") return -1;
-          if (statusA === "upcoming" && statusB === "active") return 1;
-          // Then by end date
+
+          const statusPriority = {
+            'active': 1,        // Available first
+            'upcoming': 2,      // Coming soon second
+            'used up': 3,       // Used up last
+            'expired': 4,       // Expired
+            'inactive': 5       // Inactive
+          };
+          const priorityA = statusPriority[statusA] || 6;
+          const priorityB = statusPriority[statusB] || 6;
+
+          if (priorityA !== priorityB) {
+            return priorityA - priorityB;
+          }
+
+          // Priority 2: Within same status, sort by end date (oldest first)
           return new Date(a.endDate) - new Date(b.endDate);
         });
         break;
       case "name-asc":
         filtered.sort((a, b) => {
-          // Active first, then upcoming
+          // Priority 1: Sort by status first (available > coming soon > used up)
           const statusA = getPromotionStatus(a).status;
           const statusB = getPromotionStatus(b).status;
-          if (statusA === "active" && statusB === "upcoming") return -1;
-          if (statusA === "upcoming" && statusB === "active") return 1;
-          // Then by name
+
+          const statusPriority = {
+            'active': 1,        // Available first
+            'upcoming': 2,      // Coming soon second
+            'used up': 3,       // Used up last
+            'expired': 4,       // Expired
+            'inactive': 5       // Inactive
+          };
+          const priorityA = statusPriority[statusA] || 6;
+          const priorityB = statusPriority[statusB] || 6;
+
+          if (priorityA !== priorityB) {
+            return priorityA - priorityB;
+          }
+
+          // Priority 2: Within same status, sort by name (A to Z)
           return (a.name || a.code).localeCompare(b.name || b.code);
         });
         break;
       default:
-        // Default: Active first, upcoming second, then by date desc
+        // Default: Sort by availability (available > coming soon > used up)
         filtered.sort((a, b) => {
           const statusA = getPromotionStatus(a).status;
           const statusB = getPromotionStatus(b).status;
-          if (statusA === "active" && statusB === "upcoming") return -1;
-          if (statusA === "upcoming" && statusB === "active") return 1;
+
+          const statusPriority = {
+            'active': 1,        // Available first
+            'upcoming': 2,      // Coming soon second
+            'used up': 3,       // Used up last
+            'expired': 4,       // Expired
+            'inactive': 5       // Inactive
+          };
+          const priorityA = statusPriority[statusA] || 6;
+          const priorityB = statusPriority[statusB] || 6;
+
+          if (priorityA !== priorityB) {
+            return priorityA - priorityB;
+          }
+
+          // Within same status, sort by end date (newest first)
           return new Date(b.endDate) - new Date(a.endDate);
         });
         break;
@@ -312,7 +412,7 @@ const MyPromotion = () => {
 
     // Check user-specific usage first
     if (promotion.userUsedCount >= (promotion.maxUsagePerUser || 1)) {
-      return { status: "used_up", label: "Used Up", variant: "warning" };
+      return { status: "used up", label: "Used Up", variant: "warning" };
     }
 
     const status = getPromotionStatusHelper(promotion, now, startDate, endDate);
@@ -325,7 +425,7 @@ const MyPromotion = () => {
       case "inactive":
         return { status: "inactive", label: "Inactive", variant: "secondary" };
       case "used_up":
-        return { status: "limit_reached", label: "Limit Reached", variant: "danger" };
+        return { status: "used up", label: "Limit Reached", variant: "danger" };
       default:
         return { status: "active", label: "Available", variant: "success" };
     }
@@ -357,7 +457,7 @@ const MyPromotion = () => {
             value={filters.sortOption}
             onChange={(e) => handleSortChange(e.target.value)}
           >
-            <option value="availability">Availability (Available first)</option>
+            <option value="availability">Availability (Available → Coming Soon → Used Up)</option>
             <option value="date-desc">Date (Newest first)</option>
             <option value="date-asc">Date (Oldest first)</option>
             <option value="discount-high">Discount (High to low)</option>
