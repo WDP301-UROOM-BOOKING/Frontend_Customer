@@ -67,6 +67,7 @@ const ApiConstants = {
 
   //PROMOTION
   FETCH_USER_PROMOTIONS: "promotions",
+  FETCH_ALL_PROMOTIONS: "promotions",
   USE_PROMOTION: "promotions/apply",
 
 };

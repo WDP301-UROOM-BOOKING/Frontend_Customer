@@ -88,6 +88,16 @@ const initialState = {
   totalCount: filteredMockPromotions.length,
   loading: false,
   error: null,
+
+  // For modal promotions
+  allPromotions: [],
+  allPromotionsLoading: false,
+  allPromotionsError: null,
+
+  // For apply promotion
+  applyLoading: false,
+  applyError: null,
+  appliedPromotion: null,
 };
 
 const promotionReducer = (state = initialState, action) => {
@@ -128,10 +138,66 @@ const promotionReducer = (state = initialState, action) => {
       return {
         ...state,
         promotions: state.promotions.map((promotion) =>
-          promotion._id === action.payload._id 
+          promotion._id === action.payload._id
             ? { ...promotion, isUsed: true, usedAt: new Date().toISOString() }
             : promotion
         ),
+      };
+
+    // Fetch all promotions for modal
+    case PromotionActions.FETCH_ALL_PROMOTIONS:
+      return {
+        ...state,
+        allPromotionsLoading: true,
+        allPromotionsError: null,
+      };
+
+    case PromotionActions.FETCH_ALL_PROMOTIONS_SUCCESS:
+      console.log("🔍 Reducer: FETCH_ALL_PROMOTIONS_SUCCESS payload:", action.payload);
+
+      let allPromotionsData = action.payload.promotions || action.payload;
+      if (!Array.isArray(allPromotionsData)) {
+        console.warn("🚨 Reducer: all promotions data is not an array:", allPromotionsData);
+        allPromotionsData = [];
+      }
+
+      return {
+        ...state,
+        allPromotionsLoading: false,
+        allPromotions: allPromotionsData,
+        allPromotionsError: null,
+      };
+
+    case PromotionActions.FETCH_ALL_PROMOTIONS_FAILURE:
+      return {
+        ...state,
+        allPromotionsLoading: false,
+        allPromotionsError: action.payload,
+      };
+
+    // Apply promotion
+    case PromotionActions.APPLY_PROMOTION:
+      return {
+        ...state,
+        applyLoading: true,
+        applyError: null,
+        appliedPromotion: null,
+      };
+
+    case PromotionActions.APPLY_PROMOTION_SUCCESS:
+      return {
+        ...state,
+        applyLoading: false,
+        appliedPromotion: action.payload,
+        applyError: null,
+      };
+
+    case PromotionActions.APPLY_PROMOTION_FAILURE:
+      return {
+        ...state,
+        applyLoading: false,
+        applyError: action.payload,
+        appliedPromotion: null,
       };
 
     default:
