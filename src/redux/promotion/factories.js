@@ -6,6 +6,11 @@ const Factories = {
     return api.get(ApiConstants.FETCH_USER_PROMOTIONS);
   },
 
+  // Claim promotion
+  claimPromotion: (data) => {
+    return api.post(ApiConstants.CLAIM_PROMOTION, data);
+  },
+
   // Fetch all promotions for modal (public endpoint)
   fetchAllPromotions: () => {
     // Note: totalPrice filtering will be done in saga after fetching all promotions

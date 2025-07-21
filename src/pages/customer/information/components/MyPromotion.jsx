@@ -17,8 +17,9 @@ const MyPromotion = () => {
   console.log("🔍 Component: Redux state:", { promotions, loading, error });
   console.log("🔍 Component: promotions type:", typeof promotions, "isArray:", Array.isArray(promotions));
 
-  // Ensure promotions is always an array
-  const safePromotions = Array.isArray(promotions) ? promotions : [];
+  // Ensure promotions is always an array and filter only claimed promotions
+  const allPromotions = Array.isArray(promotions) ? promotions : [];
+  const safePromotions = allPromotions.filter(promotion => promotion.isClaimed === true);
   
   // Pagination states
   const pageParam = searchParams.get("page");
@@ -34,9 +35,9 @@ const MyPromotion = () => {
   // Filter states
   const [filters, setFilters] = useState({
     status: statusParam || "all",
-    discountType: typeParam || "all", 
+    promotionType: searchParams.get("promotionType") || "all", // PUBLIC/PRIVATE filter
     searchCode: searchParam || "",
-    sortOption: sortParam || "date-desc"
+    sortOption: sortParam || "availability" // Default to availability sort
   });
 
   // Function to update URL with current filters and page
@@ -95,9 +96,9 @@ const MyPromotion = () => {
       });
     }
 
-    // Filter by discount type
-    if (filters.discountType !== "all") {
-      filtered = filtered.filter(promo => promo.discountType === filters.discountType);
+    // Filter by promotion type (PUBLIC/PRIVATE)
+    if (filters.promotionType !== "all") {
+      filtered = filtered.filter(promo => promo.type === filters.promotionType);
     }
 
     // Filter by code search
@@ -111,6 +112,23 @@ const MyPromotion = () => {
 
     // Apply sort
     switch (filters.sortOption) {
+      case "availability":
+        filtered.sort((a, b) => {
+          // Priority 1: PUBLIC promotions first, PRIVATE promotions last
+          if (a.type === 'PUBLIC' && b.type === 'PRIVATE') return -1;
+          if (a.type === 'PRIVATE' && b.type === 'PUBLIC') return 1;
+
+          // Priority 2: Within same type, available first, used up last
+          const canUseA = a.userCanUse !== false;
+          const canUseB = b.userCanUse !== false;
+
+          if (canUseA && !canUseB) return -1;
+          if (!canUseA && canUseB) return 1;
+
+          // Priority 3: Within same availability, sort by claimed date (newest first)
+          return new Date(b.claimedAt || b.createdAt) - new Date(a.claimedAt || a.createdAt);
+        });
+        break;
       case "discount-high":
         filtered.sort((a, b) => {
           // Active first, then upcoming
@@ -135,13 +153,18 @@ const MyPromotion = () => {
         break;
       case "date-desc":
         filtered.sort((a, b) => {
-          // Active first, then upcoming
-          const statusA = getPromotionStatus(a).status;
-          const statusB = getPromotionStatus(b).status;
-          if (statusA === "active" && statusB === "upcoming") return -1;
-          if (statusA === "upcoming" && statusB === "active") return 1;
-          // Then by end date
-          return new Date(b.endDate) - new Date(a.endDate);
+          // PUBLIC first, then PRIVATE
+          if (a.type === 'PUBLIC' && b.type === 'PRIVATE') return -1;
+          if (a.type === 'PRIVATE' && b.type === 'PUBLIC') return 1;
+
+          // Within same type, available first
+          const canUseA = a.userCanUse !== false;
+          const canUseB = b.userCanUse !== false;
+          if (canUseA && !canUseB) return -1;
+          if (!canUseA && canUseB) return 1;
+
+          // Then by claimed date (newest first)
+          return new Date(b.claimedAt || b.createdAt) - new Date(a.claimedAt || a.createdAt);
         });
         break;
       case "date-asc":
@@ -241,10 +264,12 @@ const MyPromotion = () => {
     updateURL({ status: newStatus, page: 1 });
   };
 
-  const handleTypeFilterChange = (newType) => {
-    setFilters(prev => ({ ...prev, discountType: newType }));
+
+
+  const handlePromotionTypeFilterChange = (newPromotionType) => {
+    setFilters(prev => ({ ...prev, promotionType: newPromotionType }));
     setActivePage(1);
-    updateURL({ type: newType, page: 1 });
+    updateURL({ promotionType: newPromotionType, page: 1 });
   };
 
   const handleSearchChange = (newSearch) => {
@@ -253,16 +278,7 @@ const MyPromotion = () => {
     updateURL({ search: newSearch, page: 1 });
   };
 
-  const resetFilters = () => {
-    setFilters({
-      status: "all",
-      discountType: "all", 
-      searchCode: "",
-      sortOption: "date-desc"
-    });
-    setActivePage(1);
-    updateURL({ page: 1 });
-  };
+
 
 
 
@@ -293,19 +309,25 @@ const MyPromotion = () => {
     const now = new Date();
     const startDate = new Date(promotion.startDate);
     const endDate = new Date(promotion.endDate);
+
+    // Check user-specific usage first
+    if (promotion.userUsedCount >= (promotion.maxUsagePerUser || 1)) {
+      return { status: "used_up", label: "Used Up", variant: "warning" };
+    }
+
     const status = getPromotionStatusHelper(promotion, now, startDate, endDate);
-    
+
     switch (status) {
       case "upcoming":
-        return { status: "upcoming", label: "Starting Soon", variant: "warning" };
+        return { status: "upcoming", label: "Starting Soon", variant: "info" };
       case "expired":
         return { status: "expired", label: "Expired", variant: "secondary" };
       case "inactive":
         return { status: "inactive", label: "Inactive", variant: "secondary" };
       case "used_up":
-        return { status: "used_up", label: "Used Up", variant: "danger" };
+        return { status: "limit_reached", label: "Limit Reached", variant: "danger" };
       default:
-        return { status: "active", label: "Active", variant: "success" };
+        return { status: "active", label: "Available", variant: "success" };
     }
   };
 
@@ -335,6 +357,7 @@ const MyPromotion = () => {
             value={filters.sortOption}
             onChange={(e) => handleSortChange(e.target.value)}
           >
+            <option value="availability">Availability (Available first)</option>
             <option value="date-desc">Date (Newest first)</option>
             <option value="date-asc">Date (Oldest first)</option>
             <option value="discount-high">Discount (High to low)</option>
@@ -355,16 +378,16 @@ const MyPromotion = () => {
         </Col>
         <Col xs="auto">
           <Form.Select
-            style={{ width: "140px" }}
-            value={filters.discountType}
-            onChange={(e) => handleTypeFilterChange(e.target.value)}
+            style={{ width: "120px" }}
+            value={filters.promotionType}
+            onChange={(e) => handlePromotionTypeFilterChange(e.target.value)}
           >
-            <option value="all">All types</option>
-            <option value="PERCENTAGE">Percentage</option>
-            <option value="FIXED_AMOUNT">Fixed Amount</option>
+            <option value="all">All</option>
+            <option value="PUBLIC">Public</option>
+            <option value="PRIVATE">Private</option>
           </Form.Select>
         </Col>
-        <Col xs="auto">
+        <Col className="ms-auto">
           <Form.Control
             type="text"
             placeholder="Search promotions..."
@@ -372,11 +395,6 @@ const MyPromotion = () => {
             value={filters.searchCode}
             onChange={(e) => handleSearchChange(e.target.value)}
           />
-        </Col>
-        <Col xs="auto">
-          <Button variant="outline-secondary" size="sm" onClick={resetFilters}>
-            Reset
-          </Button>
         </Col>
       </Row>
 
@@ -398,11 +416,7 @@ const MyPromotion = () => {
               : "No promotions found matching your criteria."
             }
           </p>
-          {safePromotions.length > 0 && (
-            <Button variant="outline-primary" onClick={resetFilters}>
-              Clear Filters
-            </Button>
-          )}
+
         </div>
       ) : (
         paginatedPromotions.map((promotion) => {
@@ -431,7 +445,12 @@ const MyPromotion = () => {
                         <Col xs={10} className="ps-3">
                           <div className="d-flex align-items-center mb-2">
                             <h5 className="fw-bold mb-0 me-3">{promotion.name || promotion.code}</h5>
-                            <Badge bg={statusInfo.variant}>{statusInfo.label}</Badge>
+                            <Badge bg={statusInfo.variant} className="me-2">{statusInfo.label}</Badge>
+                            {promotion.type && (
+                              <Badge bg={promotion.type === 'PRIVATE' ? 'warning' : 'info'} variant="outline">
+                                {promotion.type}
+                              </Badge>
+                            )}
                           </div>
                           <p className="mb-2 text-muted">{promotion.description}</p>
                           <div className="d-flex flex-wrap gap-3 small text-muted">
@@ -450,6 +469,11 @@ const MyPromotion = () => {
                               <FaCalendarAlt className="me-1" />
                               {new Date(promotion.startDate).toLocaleDateString()} - {new Date(promotion.endDate).toLocaleDateString()}
                             </span>
+                            {promotion.claimedAt && (
+                              <span>
+                                <strong>Claimed:</strong> {new Date(promotion.claimedAt).toLocaleDateString()}
+                              </span>
+                            )}
                           </div>
                         </Col>
                       </Row>
@@ -486,11 +510,14 @@ const MyPromotion = () => {
                           {isUsable ? "Copy Code" : "Not Available"}
                         </Button>
                         
-                        {promotion.usageLimit && (
-                          <div className="mt-2 small text-muted">
-                            <strong>Usage:</strong> {promotion.usedCount}/{promotion.usageLimit}
+                        <div className="mt-2 small text-muted">
+                          <div>
+                            <strong>Your Usage:</strong> {promotion.userUsedCount || 0}/{promotion.maxUsagePerUser || 1}
                           </div>
-                        )}
+                          <div>
+                            <strong>Global Usage:</strong> {promotion.usageLimit ? `${promotion.usedCount || 0}/${promotion.usageLimit}` : 'Unlimited'}
+                          </div>
+                        </div>
                       </Card.Body>
                     </Card>
                   </Col>

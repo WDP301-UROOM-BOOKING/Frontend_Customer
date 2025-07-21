@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Modal, Button, Card, Badge, Spinner, Form } from "react-bootstrap";
+import { Modal, Button, Card, Badge, Spinner, Form, ProgressBar } from "react-bootstrap";
 import { FaTag, FaTimes, FaCheck } from "react-icons/fa";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchAllPromotions, applyPromotion, clearAppliedPromotion } from "../../../../redux/promotion/actions";
@@ -330,10 +330,66 @@ const PromotionModal = ({ show, onHide, totalPrice, onApplyPromotion, currentPro
                                 {promotion.maxUsagePerUser && (
                                   <div className="mb-2">
                                     <small style={{color: 'rgba(255,255,255,0.8)'}}>
-                                      Usage: {promotion.userUsedCount || 0}/{promotion.maxUsagePerUser}
+                                      <strong>Your Usage:</strong> {promotion.userUsedCount || 0}/{promotion.maxUsagePerUser}
                                       {promotion.userCanUse === false && (
                                         <span className="text-warning ms-1">(Limit reached)</span>
                                       )}
+                                    </small>
+                                  </div>
+                                )}
+
+                                {/* Global usage information with progress bar */}
+                                {promotion.usageLimit && (
+                                  <div className="mb-2">
+                                    <div className="d-flex justify-content-between align-items-center mb-1">
+                                      <small style={{color: 'rgba(255,255,255,0.7)'}}>
+                                        <strong>Global Usage:</strong>
+                                      </small>
+                                      <small style={{color: 'rgba(255,255,255,0.7)'}}>
+                                        {Math.round(((promotion.usedCount || 0) / promotion.usageLimit) * 100)}%
+                                      </small>
+                                    </div>
+                                    <ProgressBar
+                                      now={Math.min(((promotion.usedCount || 0) / promotion.usageLimit) * 100, 100)}
+                                      variant={
+                                        ((promotion.usedCount || 0) / promotion.usageLimit) >= 1.0 ? 'danger' :
+                                        ((promotion.usedCount || 0) / promotion.usageLimit) >= 0.9 ? 'danger' :
+                                        ((promotion.usedCount || 0) / promotion.usageLimit) >= 0.7 ? 'warning' :
+                                        ((promotion.usedCount || 0) / promotion.usageLimit) >= 0.5 ? 'info' : 'success'
+                                      }
+                                      style={{
+                                        height: '8px',
+                                        backgroundColor: 'rgba(255,255,255,0.2)',
+                                        borderRadius: '4px',
+                                        overflow: 'hidden'
+                                      }}
+                                      animated={((promotion.usedCount || 0) / promotion.usageLimit) >= 0.9}
+                                    />
+                                    {(() => {
+                                      const usagePercent = ((promotion.usedCount || 0) / promotion.usageLimit) * 100;
+                                      if (promotion.usedCount >= promotion.usageLimit) {
+                                        return (
+                                          <small className="text-danger mt-1 d-block">
+                                            <strong>🚫 Exhausted</strong>
+                                          </small>
+                                        );
+                                      } else if (usagePercent >= 90) {
+                                        return (
+                                          <small className="text-warning mt-1 d-block">
+                                            <strong>⚠️ Almost full</strong>
+                                          </small>
+                                        );
+                                      }
+                                      return null;
+                                    })()}
+                                  </div>
+                                )}
+
+                                {/* Show unlimited usage info */}
+                                {!promotion.usageLimit && (
+                                  <div className="mb-2">
+                                    <small style={{color: 'rgba(255,255,255,0.7)'}}>
+                                      <strong>Global Usage:</strong> Unlimited
                                     </small>
                                   </div>
                                 )}
