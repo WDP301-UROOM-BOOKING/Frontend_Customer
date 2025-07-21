@@ -158,8 +158,8 @@ export const SearchBar = () => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [filteredHotels, setFilteredHotels] = useState([]);
   const [selectedCity, setSelectedCity] = useState({
-    value: "Hà Nội",
-    label: "Hà Nội",
+    value: "Thành phố Hà Nội",
+    label: "Thành phố Hà Nội",
   });
   const [selectedAdults, setSelectedAdults] = useState(adultsOptions[0]);
   const [selectedChildren, setSelectedChildren] = useState(childrenOptions[0]);
@@ -934,19 +934,19 @@ const HotelBooking = () => {
 function RecommendHotels() {
   const hotels = [
     {
-      city: "Hồ Chí Minh",
+      city: "Thành phố Hồ Chí Minh",
       image: travel4,
     },
     {
-      city: "Hà Nội",
+      city: "Thành phố Hà Nội",
       image: travel6,
     },
     {
-      city: "Đà Nẵng",
+      city: "Thành phố Đà Nẵng",
       image: travel5,
     },
     {
-      city: "Hải Phòng",
+      city: "Thành phố Hải Phòng",
       image: travel7,
     },
   ];

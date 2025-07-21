@@ -108,6 +108,8 @@ const LoginPage = () => {
                 state: {
                   reasonLocked: user.reasonLocked,
                   dateLocked: Utils.getDate(user.dateLocked, 4),
+                  lockDuration: user.lockDuration,
+                  lockExpiresAt: user.lockExpiresAt,
                 },
               });
               dispatch({ type: AuthActions.LOGOUT });

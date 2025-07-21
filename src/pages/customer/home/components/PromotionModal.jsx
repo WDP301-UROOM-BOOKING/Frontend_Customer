@@ -3,6 +3,7 @@ import { Modal, Button, Card, Badge, Spinner } from "react-bootstrap";
 import { FaTag, FaTimes, FaCheck } from "react-icons/fa";
 import axios from "axios";
 import Utils from "../../../../utils/Utils";
+import getApiUrl from "../../../../utils/apiConfig"; // Add this import
 import "../../../../css/PromotionModal.css";
 
 const PromotionModal = ({ show, onHide, totalPrice, onApplyPromotion, currentPromotionId }) => {
@@ -10,6 +11,8 @@ const PromotionModal = ({ show, onHide, totalPrice, onApplyPromotion, currentPro
   const [loading, setLoading] = useState(false);
   const [selectedPromotion, setSelectedPromotion] = useState(null);
   const [applying, setApplying] = useState(false);
+
+  const API_BASE_URL = getApiUrl(); // Add this line
 
   useEffect(() => {
     if (show && totalPrice > 0) {
@@ -20,24 +23,22 @@ const PromotionModal = ({ show, onHide, totalPrice, onApplyPromotion, currentPro
   const fetchPromotions = async () => {
     setLoading(true);
     try {
-      // Thử fetch từ API trước
       let promotionList = [];
       try {
         console.log("Fetching promotions from API...");
-        const response = await axios.get("http://localhost:5000/api/promotions");
+        // Replace hardcoded URL with environment-based URL
+        const response = await axios.get(`${API_BASE_URL}/api/promotions`);
         console.log("API Response:", response.data);
         
-        // Thử nhiều cách để lấy data từ response
         promotionList = response.data.promotions || response.data.data || response.data || [];
         console.log("Promotion list from API:", promotionList);
         
-        // Nếu API trả về nhưng không có data, sử dụng mock
         if (!Array.isArray(promotionList) || promotionList.length === 0) {
           console.log("API returned empty or invalid data, using mock data");
           throw new Error("No promotions from API");
         }
       } catch (apiError) {
-        // Nếu API không có, sử dụng mock data
+        // Mock data remains the same
         console.log("API Error:", apiError.message, "- Using mock promotion data");
         promotionList = [
           {
@@ -90,13 +91,13 @@ const PromotionModal = ({ show, onHide, totalPrice, onApplyPromotion, currentPro
       console.log("Total price for validation:", totalPrice);
       console.log("Processing", promotionList.length, "promotions");
       
-      // Validate từng promotion với totalPrice hiện tại
       const validatedPromotions = await Promise.all(
         promotionList.map(async (promo, index) => {
           console.log(`Validating promotion ${index + 1}:`, promo.code);
           
           try {
-            const validateRes = await axios.post("http://localhost:5000/api/promotions/apply", {
+            // Replace hardcoded URL with environment-based URL
+            const validateRes = await axios.post(`${API_BASE_URL}/api/promotions/apply`, {
               code: promo.code,
               orderAmount: totalPrice,
             });
@@ -197,9 +198,9 @@ const PromotionModal = ({ show, onHide, totalPrice, onApplyPromotion, currentPro
     
     setApplying(true);
     try {
-      // Thử apply qua API trước
       try {
-        const response = await axios.post("http://localhost:5000/api/promotions/apply", {
+        // Replace hardcoded URL with environment-based URL
+        const response = await axios.post(`${API_BASE_URL}/api/promotions/apply`, {
           code: promotion.code,
           orderAmount: totalPrice,
         });
@@ -214,7 +215,7 @@ const PromotionModal = ({ show, onHide, totalPrice, onApplyPromotion, currentPro
           onHide();
         }
       } catch (apiError) {
-        // Nếu API không có, sử dụng mock logic
+        // Mock logic remains the same
         console.log("Using mock promotion application");
         onApplyPromotion({
           code: promotion.code,

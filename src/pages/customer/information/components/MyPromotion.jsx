@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from "react";
-import { Card, Badge, Button, Row, Col, Spinner, Alert, Form, Container, Pagination } from "react-bootstrap";
-import { FaTag, FaCopy, FaCalendarAlt, FaPercentage, FaDollarSign, FaFilter, FaSync } from "react-icons/fa";
+import React, { useState, useEffect, useCallback } from "react";
+import { Card, Badge, Button, Row, Col, Alert, Form, Container, Pagination } from "react-bootstrap";
+import { FaCopy, FaCalendarAlt, FaPercentage, FaDollarSign } from "react-icons/fa";
 import { useAppSelector, useAppDispatch } from "../../../../redux/store";
 import PromotionActions from "../../../../redux/promotion/actions";
 import Utils from "../../../../utils/Utils";
 import "../../../../css/MyPromotion.css";
 import { useSearchParams } from "react-router-dom";
+import { showToast, ToastProvider } from "@components/ToastContainer";
 
 const MyPromotion = () => {
   const dispatch = useAppDispatch();
@@ -14,6 +15,10 @@ const MyPromotion = () => {
 
   // Debug Redux state
   console.log("🔍 Component: Redux state:", { promotions, loading, error });
+  console.log("🔍 Component: promotions type:", typeof promotions, "isArray:", Array.isArray(promotions));
+
+  // Ensure promotions is always an array
+  const safePromotions = Array.isArray(promotions) ? promotions : [];
   
   // Pagination states
   const pageParam = searchParams.get("page");
@@ -35,7 +40,7 @@ const MyPromotion = () => {
   });
 
   // Function to update URL with current filters and page
-  const updateURL = (params) => {
+  const updateURL = useCallback((params) => {
     const newParams = new URLSearchParams(searchParams);
 
     // Update or add parameters
@@ -49,7 +54,7 @@ const MyPromotion = () => {
 
     // Update URL without reloading the page
     setSearchParams(newParams);
-  };
+  }, [searchParams, setSearchParams]);
 
   // Sync component state with URL parameters when URL changes
   useEffect(() => {
@@ -69,26 +74,17 @@ const MyPromotion = () => {
     }));
   }, [pageParam, sortParam, statusParam, typeParam, searchParam]);
 
-  useEffect(() => {
-    fetchPromotions();
-  }, [dispatch]);
-
-  useEffect(() => {
-    if (promotions.length > 0) {
-      const { totalFilteredCount } = getFilteredPromotions();
-      const newTotalPages = Math.ceil(totalFilteredCount / itemsPerPage);
-      setTotalPages(newTotalPages);
-
-      // If current page is greater than total pages, adjust it
-      if (activePage > newTotalPages && newTotalPages > 0) {
-        setActivePage(newTotalPages);
-        updateURL({ page: newTotalPages });
-      }
-    }
-  }, [promotions, filters, activePage]);
-
   // Apply filters and pagination to promotions
-  const getFilteredPromotions = (data = promotions) => {
+  const getFilteredPromotions = useCallback((data = safePromotions) => {
+    // Ensure data is always an array
+    if (!Array.isArray(data)) {
+      console.warn("🚨 Component: promotions is not an array:", data);
+      return {
+        paginatedPromotions: [],
+        totalFilteredCount: 0,
+      };
+    }
+
     let filtered = [...data];
 
     // Filter by status
@@ -188,7 +184,43 @@ const MyPromotion = () => {
       paginatedPromotions: filtered.slice(startIndex, startIndex + itemsPerPage),
       totalFilteredCount: filtered.length,
     };
-  };
+  }, [safePromotions, filters, activePage, itemsPerPage]);
+
+  useEffect(() => {
+    const fetchPromotions = () => {
+      console.log("🎯 Component: Dispatching FETCH_USER_PROMOTIONS action");
+      dispatch({
+        type: PromotionActions.FETCH_USER_PROMOTIONS,
+        payload: {
+          onSuccess: (data) => {
+            console.log("✅ Component: Fetched promotions successfully:", data);
+          },
+          onFailed: (msg) => {
+            console.error("❌ Component: Failed to fetch promotions:", msg);
+          },
+          onError: (error) => {
+            console.error("💥 Component: Error fetching promotions:", error);
+          }
+        }
+      });
+    };
+
+    fetchPromotions();
+  }, [dispatch]);
+
+  useEffect(() => {
+    if (safePromotions.length > 0) {
+      const { totalFilteredCount } = getFilteredPromotions();
+      const newTotalPages = Math.ceil(totalFilteredCount / itemsPerPage);
+      setTotalPages(newTotalPages);
+
+      // If current page is greater than total pages, adjust it
+      if (activePage > newTotalPages && newTotalPages > 0) {
+        setActivePage(newTotalPages);
+        updateURL({ page: newTotalPages });
+      }
+    }
+  }, [safePromotions, filters, activePage, getFilteredPromotions, updateURL]);
 
   // Handle page change
   const handlePageChange = (newPage) => {
@@ -232,28 +264,12 @@ const MyPromotion = () => {
     updateURL({ page: 1 });
   };
 
-  const fetchPromotions = () => {
-    console.log("🎯 Component: Dispatching FETCH_USER_PROMOTIONS action");
-    dispatch({
-      type: PromotionActions.FETCH_USER_PROMOTIONS,
-      payload: {
-        onSuccess: (data) => {
-          console.log("✅ Component: Fetched promotions successfully:", data);
-        },
-        onFailed: (msg) => {
-          console.error("❌ Component: Failed to fetch promotions:", msg);
-        },
-        onError: (error) => {
-          console.error("💥 Component: Error fetching promotions:", error);
-        }
-      }
-    });
-  };
+
 
   const copyToClipboard = (code) => {
     navigator.clipboard.writeText(code);
     // Có thể thêm toast notification ở đây
-    alert(`Promotion code "${code}" copied to clipboard!`);
+    showToast.success(`Promotion code "${code}" copied to clipboard!`);
   };
 
   const getPromotionStatusHelper = (promotion, now = new Date(), startDate = null, endDate = null) => {
@@ -301,12 +317,12 @@ const MyPromotion = () => {
     }
   };
 
-  const { paginatedPromotions, totalFilteredCount } = getFilteredPromotions();
+  const { paginatedPromotions } = getFilteredPromotions();
 
   return (
     <Container fluid className="bg-light py-4">
       <h2 className="fw-bold mb-4">My Promotions</h2>
-
+      <ToastProvider/>
       {/* Filter and Sort Controls */}
       <Row className="mb-4 align-items-center">
         <Col xs="auto">
@@ -377,12 +393,12 @@ const MyPromotion = () => {
       ) : paginatedPromotions.length === 0 ? (
         <div className="text-center py-5">
           <p className="text-muted">
-            {promotions.length === 0 
-              ? "No promotions available at the moment." 
+            {safePromotions.length === 0
+              ? "No promotions available at the moment."
               : "No promotions found matching your criteria."
             }
           </p>
-          {promotions.length > 0 && (
+          {safePromotions.length > 0 && (
             <Button variant="outline-primary" onClick={resetFilters}>
               Clear Filters
             </Button>
