@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Modal, Button, Card, Badge, Spinner } from "react-bootstrap";
+import { Modal, Button, Card, Badge, Spinner, Form } from "react-bootstrap";
 import { FaTag, FaTimes, FaCheck } from "react-icons/fa";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchAllPromotions, applyPromotion, clearAppliedPromotion } from "../../../../redux/promotion/actions";
@@ -18,6 +18,7 @@ const PromotionModal = ({ show, onHide, totalPrice, onApplyPromotion, currentPro
   } = useSelector(state => state.Promotion);
 
   const [selectedPromotion, setSelectedPromotion] = useState(null);
+  const [manualCode, setManualCode] = useState('');
 
   useEffect(() => {
     if (show && totalPrice > 0) {
@@ -90,6 +91,21 @@ const PromotionModal = ({ show, onHide, totalPrice, onApplyPromotion, currentPro
       promotionId: null,
     });
     onHide();
+  };
+
+
+
+  const handleApplyManualCode = () => {
+    if (!manualCode.trim()) return;
+
+    // Create a fake promotion object for manual code
+    const manualPromotion = {
+      code: manualCode.trim(),
+      _id: 'manual-' + manualCode.trim()
+    };
+
+    setSelectedPromotion(manualPromotion);
+    handleApplyPromotion(manualPromotion);
   };
 
   return (
@@ -168,6 +184,51 @@ const PromotionModal = ({ show, onHide, totalPrice, onApplyPromotion, currentPro
                 </Card>
               </div>
             )}
+
+            {/* Manual promotion code input */}
+            <div className="mb-4">
+              <h6 className="mb-3">Enter Promotion Code</h6>
+              <Card style={{ backgroundColor: "rgba(255,255,255,0.05)", borderColor: "rgba(255,255,255,0.2)" }}>
+                <Card.Body className="py-3">
+                  <div className="d-flex gap-2">
+                    <Form.Control
+                      type="text"
+                      placeholder="Enter promotion code..."
+                      value={manualCode}
+                      onChange={(e) => setManualCode(e.target.value.toUpperCase())}
+                      style={{
+                        backgroundColor: "rgba(255,255,255,0.1)",
+                        borderColor: "rgba(255,255,255,0.3)",
+                        color: "white"
+                      }}
+                      disabled={applying}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && manualCode.trim() && !applying) {
+                          handleApplyManualCode();
+                        }
+                      }}
+                    />
+                    <Button
+                      variant="primary"
+                      onClick={handleApplyManualCode}
+                      disabled={applying || !manualCode.trim()}
+                    >
+                      {applying ? (
+                        <>
+                          <Spinner size="sm" className="me-1" />
+                          Applying...
+                        </>
+                      ) : (
+                        'Apply'
+                      )}
+                    </Button>
+                  </div>
+                  <small className="text-muted mt-2 d-block">
+                    Enter a promotion code to apply it to your order
+                  </small>
+                </Card.Body>
+              </Card>
+            </div>
 
             {/* Promotions section */}
             <h6 className="mb-3">
