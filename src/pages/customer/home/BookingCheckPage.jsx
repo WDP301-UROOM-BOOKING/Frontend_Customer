@@ -329,6 +329,31 @@ const BookingCheckPage = () => {
       setPromotionDiscount(promotionData.discount);
       setPromotionMessage(promotionData.message);
       setPromotionId(promotionData.promotionId);
+
+      // Update sessionStorage
+      if (promotionData.code && promotionData.promotionId) {
+        // Save new promotion to sessionStorage
+        sessionStorage.setItem(
+          "promotionInfo",
+          JSON.stringify({
+            promotionCode: promotionData.code,
+            promotionDiscount: promotionData.discount,
+            promotionMessage: promotionData.message,
+            promotionId: promotionData.promotionId,
+            savedTime: Date.now(),
+            // Save booking context to detect new bookings
+            hotelId: bookingData.hotelDetail?._id,
+            roomsHash: JSON.stringify(
+              bookingData.selectedRooms
+                ?.map((r) => ({ roomId: r.room._id, amount: r.amount }))
+                .sort()
+            ),
+          })
+        );
+      } else {
+        // Remove promotion from sessionStorage if code is empty (remove promotion)
+        sessionStorage.removeItem("promotionInfo");
+      }
     };
 
     // Use setTimeout to batch the state updates

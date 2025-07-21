@@ -12,6 +12,7 @@ const PromotionActions = {
   APPLY_PROMOTION: "APPLY_PROMOTION",
   APPLY_PROMOTION_SUCCESS: "APPLY_PROMOTION_SUCCESS",
   APPLY_PROMOTION_FAILURE: "APPLY_PROMOTION_FAILURE",
+  CLEAR_APPLIED_PROMOTION: "CLEAR_APPLIED_PROMOTION",
 
   // Legacy USE_PROMOTION actions (keep for backward compatibility)
   USE_PROMOTION: "USE_PROMOTION",
@@ -91,6 +92,11 @@ export const applyPromotionSuccess = (data) => ({
 export const applyPromotionFailure = (error) => ({
   type: PromotionActions.APPLY_PROMOTION_FAILURE,
   payload: error
+});
+
+// Clear applied promotion
+export const clearAppliedPromotion = () => ({
+  type: PromotionActions.CLEAR_APPLIED_PROMOTION
 });
 
 export default PromotionActions;

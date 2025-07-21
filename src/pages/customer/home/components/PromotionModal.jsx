@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Modal, Button, Card, Badge, Spinner } from "react-bootstrap";
 import { FaTag, FaTimes, FaCheck } from "react-icons/fa";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchAllPromotions, applyPromotion } from "../../../../redux/promotion/actions";
+import { fetchAllPromotions, applyPromotion, clearAppliedPromotion } from "../../../../redux/promotion/actions";
 import Utils from "../../../../utils/Utils";
 import "../../../../css/PromotionModal.css";
 
@@ -35,16 +35,19 @@ const PromotionModal = ({ show, onHide, totalPrice, onApplyPromotion, currentPro
 
   // Handle apply promotion success
   useEffect(() => {
-    if (appliedPromotion) {
+    if (appliedPromotion && selectedPromotion) {
       onApplyPromotion({
-        code: appliedPromotion.code,
+        code: selectedPromotion.code, // Use code from selected promotion
         discount: appliedPromotion.discount,
         message: `Promotion applied: -${Utils.formatCurrency(appliedPromotion.discount)}`,
         promotionId: appliedPromotion.promotionId || appliedPromotion._id,
       });
       onHide();
+      // Reset selected promotion and clear applied promotion from Redux
+      setSelectedPromotion(null);
+      dispatch(clearAppliedPromotion());
     }
-  }, [appliedPromotion, onApplyPromotion, onHide]);
+  }, [appliedPromotion, selectedPromotion, onApplyPromotion, onHide, dispatch]);
 
   const handleApplyPromotion = (promotion) => {
     // Check if promotion is valid based on current data
@@ -62,6 +65,9 @@ const PromotionModal = ({ show, onHide, totalPrice, onApplyPromotion, currentPro
       return;
     }
 
+    // Set selected promotion so we can use it when apply succeeds
+    setSelectedPromotion(promotion);
+
     dispatch(applyPromotion({
       code: promotion.code,
       orderAmount: totalPrice,
@@ -70,6 +76,8 @@ const PromotionModal = ({ show, onHide, totalPrice, onApplyPromotion, currentPro
       },
       onFailed: (error) => {
         console.error("❌ Failed to apply promotion:", error);
+        // Reset selected promotion on failure
+        setSelectedPromotion(null);
       }
     }));
   };

@@ -200,6 +200,14 @@ const promotionReducer = (state = initialState, action) => {
         appliedPromotion: null,
       };
 
+    // Clear applied promotion
+    case PromotionActions.CLEAR_APPLIED_PROMOTION:
+      return {
+        ...state,
+        appliedPromotion: null,
+        applyError: null,
+      };
+
     default:
       return state;
   }
