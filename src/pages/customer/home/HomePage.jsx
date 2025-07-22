@@ -25,6 +25,7 @@ import {
   FaArrowRight,
   FaTrash,
 } from "react-icons/fa";
+import { askGemini, getWeatherForCity, extractCity, extractTopHotelRequest, getTopHotels, getTopHotelsFromServer } from "@utils/chatAI";
 import { useEffect, useRef, useState } from "react";
 import NavigationBar from "../Header";
 import Footer from "../Footer";
@@ -62,6 +63,7 @@ import { useAppSelector, useAppDispatch } from "../../../redux/store";
 import HotelActions from "../../../redux/hotel/actions";
 import RoomActions from "../../../redux/room/actions";
 import Utils from "@utils/Utils";
+import ReactMarkdown from "react-markdown";
 import qaData, {
   CancellationPolicy,
   ChatSupportCard,
@@ -1073,6 +1075,21 @@ function CustomerReviews() {
   );
 }
 
+export const findAnswerFromQA = (message) => {
+  const lowerMsg = message.trim().toLowerCase();
+  for (const qa of qaData) {
+    if (
+      qa.questions.some((q) =>
+        lowerMsg.includes(q.toLowerCase())
+      )
+    ) {
+      // Trả về mảng answer (có thể là text hoặc tên component đặc biệt)
+      return qa.answer;
+    }
+  }
+  return null;
+};
+
 export const ChatBox = () => {
   const dispatch = useDispatch();
   const Messages = useAppSelector((state) => state.ChatBox.Messages);
@@ -1102,7 +1119,7 @@ export const ChatBox = () => {
 
   const sendMessage = () => {
     if (input.trim() !== "") {
-      const userMessage = input.trim().toLowerCase();
+      const userMessage = input.trim();
       setMessages([...messages, { text: input, sender: "user" }]);
       dispatch({
         type: ChatboxActions.ADD_MESSAGE,
@@ -1112,43 +1129,61 @@ export const ChatBox = () => {
       });
       setInput("");
 
-      setTimeout(() => {
-        const matchedQA = qaData.find((qa) =>
-          qa.questions.some((q) =>
-            userMessage.toLowerCase().includes(q.toLowerCase())
-          )
-        );
-
-        if (matchedQA) {
-          const botReplies = matchedQA.answer;
-          const newMessages = botReplies.map((reply) => ({
-            text: reply,
-            sender: "bot",
-          }));
-
-          setMessages((prev) => [...prev, ...newMessages]);
-
-          newMessages.forEach((message) => {
+      setTimeout(async () => {
+        // 1. Check FAQ trước
+        const qaAnswers = findAnswerFromQA(userMessage);
+        if (qaAnswers && qaAnswers.length > 0) {
+          for (const ans of qaAnswers) {
+            setMessages((prev) => [...prev, { text: ans, sender: "bot" }]);
             dispatch({
               type: ChatboxActions.ADD_MESSAGE,
-              payload: { message },
-            });
-          });
-        } else {
-          setMessages((prev) => [
-            ...prev,
-            { text: "Sorry, I don't understand your question.", sender: "bot" },
-          ]);
-          dispatch({
-            type: ChatboxActions.ADD_MESSAGE,
-            payload: {
-              message: {
-                text: "Sorry, I don't understand your question.",
-                sender: "bot",
+              payload: {
+                message: { text: ans, sender: "bot" },
               },
-            },
-          });
+            });
+          }
+          return; // Không xử lý tiếp nếu đã trả lời từ FAQ
         }
+
+        // // 2. Xử lý top khách sạn như cũ
+        // const topHotelRequest = extractTopHotelRequest(userMessage);
+        // if (topHotelRequest) {
+        //   const list = getTopHotels(topHotelRequest.city, topHotelRequest.count);
+        //   if (list.length > 0) {
+        //     const formatted = list
+        //       .map((hotel, idx) => `${idx + 1}. ${hotel.name} (${hotel.rating}⭐)`)
+        //       .join("\n");
+
+        //     setMessages((prev) => [...prev, { text: formatted, sender: "bot" }]);
+        //     dispatch({
+        //       type: ChatboxActions.ADD_MESSAGE,
+        //       payload: {
+        //         message: { text: formatted, sender: "bot" },
+        //       },
+        //     });
+        //     return;
+        //   }
+        // }
+
+        // 3. Xử lý thời tiết và gọi AI như cũ
+        const city = extractCity(userMessage);
+        let weatherText = "";
+        if (city) {
+          weatherText = await getWeatherForCity(city);
+        }
+
+        const reply = await askGemini(userMessage, weatherText);
+
+        setMessages((prev) => [...prev, { text: reply, sender: "bot" }]);
+        dispatch({
+          type: ChatboxActions.ADD_MESSAGE,
+          payload: {
+            message: {
+              text: reply,
+              sender: "bot",
+            },
+          },
+        });
       }, 1000);
     }
   };
@@ -1227,7 +1262,7 @@ export const ChatBox = () => {
                   msg.text !== "ListHotelDaNang" &&
                   msg.text !== "ListHotelHoChiMinh" &&
                   msg.text !== "ListHotelHaNoi" &&
-                  msg.text}
+                  <ReactMarkdown>{msg.text}</ReactMarkdown>}
               </div>
             ))}
             <div ref={messagesEndRef} />
