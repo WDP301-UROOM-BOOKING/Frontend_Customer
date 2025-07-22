@@ -5,6 +5,7 @@ import "../css/BannedPage.css";
 import * as Routers from "../utils/Routes";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { useAppSelector } from "@redux/store";
 
 function getUnlockCountdown(lockExpiresAt) {
   if (!lockExpiresAt) return null;
@@ -13,7 +14,9 @@ function getUnlockCountdown(lockExpiresAt) {
   const diffMs = expires - now;
   if (diffMs <= 0) return null;
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-  const diffHours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  const diffHours = Math.floor(
+    (diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
+  );
   const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
   return { diffDays, diffHours, diffMinutes };
 }
@@ -21,15 +24,18 @@ function getUnlockCountdown(lockExpiresAt) {
 const BannedPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const Auth = useAppSelector((state) => state.Auth.Auth);
   const reasonLocked = location.state?.reasonLocked || "";
   const lockDuration = location.state?.lockDuration;
   const lockExpiresAt = location.state?.lockExpiresAt;
   const [countdown, setCountdown] = useState(() =>
-    lockDuration && lockDuration !== 'permanent' ? getUnlockCountdown(lockExpiresAt) : null
+    lockDuration && lockDuration !== "permanent"
+      ? getUnlockCountdown(lockExpiresAt)
+      : null
   );
 
   useEffect(() => {
-    if (lockDuration && lockDuration !== 'permanent' && lockExpiresAt) {
+    if (lockDuration && lockDuration !== "permanent" && lockExpiresAt) {
       const interval = setInterval(() => {
         setCountdown(getUnlockCountdown(lockExpiresAt));
       }, 60000); // cập nhật mỗi phút
@@ -59,20 +65,18 @@ const BannedPage = () => {
             </span>
           </div>
 
-          {countdown && (typeof countdown === 'object') ? (
+          {countdown && typeof countdown === "object" ? (
             <div className="detail-item">
               <span className="detail-label">Time remaining: </span>
               <span className="detail-value" style={{ color: "orange" }}>
-                {countdown.diffDays > 0 ? `${countdown.diffDays} days, ` : ''}
+                {countdown.diffDays > 0 ? `${countdown.diffDays} days, ` : ""}
                 {countdown.diffHours} hours, {countdown.diffMinutes} minutes
               </span>
             </div>
           ) : null}
           <div className="detail-item">
             <span className="detail-label">Date locked: </span>
-            <span className="detail-value">              
-              {location.state.dateLocked}
-            </span>
+            <span className="detail-value">{location.state.dateLocked}</span>
           </div>
         </div>
 
@@ -91,6 +95,24 @@ const BannedPage = () => {
             variant="danger"
             className="contact-btn"
             style={{ width: "140px" }}
+            onClick={() => {
+              if (Auth?._id != -1) {
+                navigate(Routers.ChatPage, {
+                  state: {
+                    receiver: {
+                      _id: 16,
+                      name: "Admin Uroom",
+                      image: {
+                        public_ID: "avatar_admin1",
+                        url: "https://cdn-icons-png.freepik.com/512/4880/4880553.png",
+                      },
+                    },
+                  },
+                });
+              } else {
+                navigate(Routers.LoginPage);
+              }
+            }}
           >
             Contact
           </Button>

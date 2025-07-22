@@ -698,10 +698,10 @@ const HotelSearchPage = () => {
           {/* Weather Forecast */}
           <div className="mb-4">
             <h5>
-              <span role="img" aria-label="weather">🌤️</span> Dự báo thời tiết 7 ngày tại {selectedCity?.label}
+              <span role="img" aria-label="weather">🌤️</span> <a style={{color: 'white', textDecoration: 'none'}}>7-day weather outlook at {selectedCity?.label}</a>
             </h5>
             {weatherLoading ? (
-              <div>Đang tải thời tiết...</div>
+              <div></div>
             ) : weatherError ? (
               <div className="text-danger">{weatherError}</div>
             ) : (
@@ -711,6 +711,7 @@ const HotelSearchPage = () => {
                   gap: 20,
                   overflowX: "auto",
                   paddingBottom: 8,
+                  marginLeft: 24,
                   marginTop: 8,
                 }}
               >
@@ -743,6 +744,9 @@ const HotelSearchPage = () => {
                     />
                     <div style={{ fontSize: 22, fontWeight: 700, color: "#2563eb" }}>
                       {Math.round(day.temp.day - 273.15)}°C
+                    </div>
+                    <div style={{ fontSize: 14, color: "#64748b", minHeight: 24 }}> 
+                      {day.weather[0].description.charAt(0).toUpperCase() + day.weather[0].description.slice(1)} 
                     </div>
                     <div style={{ fontSize: 14, color: "#2563eb", fontWeight: 500 }}>
                       {typeof day.pop !== "undefined" && (

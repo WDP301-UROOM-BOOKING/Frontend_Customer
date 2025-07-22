@@ -1022,14 +1022,14 @@ export default function HotelDetailPage() {
         </div>
       </div>
       {/* Main Content */}
-      <Container className="main-content">
+      <Container className="main-content mt-5">
         <div className="mb-4" >
           <div style={{ marginTop: "32px" }}>
             <h5>
-              <span role="img" aria-label="weather">🌤️</span> Dự báo thời tiết 7 ngày
+              <span role="img" aria-label="weather">🌤️</span> 7-day weather outlook for this area
             </h5>
             {weatherLoading ? (
-              <div>Đang tải thời tiết...</div>
+              <div></div>
             ) : weatherError ? (
               <div className="text-danger">{weatherError}</div>
             ) : (
@@ -1039,6 +1039,7 @@ export default function HotelDetailPage() {
                   gap: 20,
                   overflowX: "auto",
                   paddingBottom: 8,
+                  marginLeft: 24,
                   marginTop: 8,
                 }}
               >
@@ -1072,11 +1073,21 @@ export default function HotelDetailPage() {
                     <div style={{ fontSize: 22, fontWeight: 700, color: "#2563eb" }}>
                       {Math.round(day.temp.day - 273.15)}°C
                     </div>
-                    <div style={{ fontSize: 14, color: "#64748b", minHeight: 24 }}>
-                      {day.weather[0].description.charAt(0).toUpperCase() + day.weather[0].description.slice(1)}
+                    <div style={{ fontSize: 14, color: "#64748b", minHeight: 24 }}> 
+                      {day.weather[0].description.charAt(0).toUpperCase() + day.weather[0].description.slice(1)} 
                     </div>
                     <div style={{ fontSize: 14, color: "#2563eb", fontWeight: 500 }}>
-                      ☔ Xác suất mưa: {typeof day.pop !== "undefined" ? Math.round(day.pop * 100) : 0}%
+                      {typeof day.pop !== "undefined" && (
+                        <>
+                          {day.pop >= 0.8
+                            ? (day.rain && day.rain > 5
+                              ? "Khả năng mưa lớn"
+                              : "Khả năng có mưa")
+                            : day.pop <= 0.3
+                              ? "Ít khả năng mưa"
+                              : `Xác suất mưa: ${Math.round(day.pop * 100)}%`}
+                        </>
+                      )}
                     </div>
                     <div style={{ fontSize: 13, color: "#94a3b8" }}>
                       🌡️ {Math.round(day.temp.min - 273.15)}°C - {Math.round(day.temp.max - 273.15)}°C

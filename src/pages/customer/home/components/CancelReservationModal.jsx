@@ -15,21 +15,6 @@ function CancelReservationModal({
 }) {
   const [showModal, setShowModal] = useState(show);
 
-  // const calculateHoursUntilCheckIn = () => {
-  //   if (!selectedReservation?.checkIn) return null;
-
-  //   const today = new Date();
-  //   today.setHours(0, 0, 0, 0);
-
-  //   const [day, month, year] = selectedReservation.checkIn.split("/");
-  //   if (!day || !month || !year) return null;
-
-  //   const checkInDate = new Date(year, month - 1, day);
-  //   checkInDate.setHours(0, 0, 0, 0);
-
-  //   const differenceInTime = checkInDate - today;
-  //   return Math.ceil(differenceInTime / (1000 * 3600 * 24));
-  // };
 
   // thinh update refund START 12/07/2025
   const calculateHoursUntilCheckIn = () => {
@@ -44,6 +29,7 @@ function CancelReservationModal({
     checkInDate.setHours(12, 0, 0, 0);
 
     const differenceInMs = checkInDate.getTime() - now.getTime();
+    console.log('differenceInMs >> ', differenceInMs)
     return Math.floor(differenceInMs / (1000 * 60 * 60)); // ms -> hours
   };
 
