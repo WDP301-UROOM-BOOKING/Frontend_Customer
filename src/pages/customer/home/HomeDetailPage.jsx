@@ -889,6 +889,19 @@ export default function HotelDetailPage() {
   };
 
   const handleBookingClick = () => {
+
+    const now = new Date();
+    const checkinDateTime = new Date(checkinDate);
+
+    // Đặt giờ checkinDate thành 12:00 trưa
+    checkinDateTime.setHours(12, 0, 0, 0);
+
+    if (checkinDateTime < now) {
+      setErrorMessage("Check-in date must be after 12:00 PM today");
+      setShowModal(true);
+      return;
+    }
+
     if (selectedRooms.length === 0) {
       setErrorMessage("Please select a room to proceed with your booking");
       setShowModal(true);
@@ -1861,7 +1874,7 @@ export default function HotelDetailPage() {
             </div>
           )}
 
-        {/* Show message when no rooms and no services available */}
+        {/* Show message when no rooms and no services available or date is not suitable */}
         {(!rooms || rooms.length === 0) &&
           (!hotelDetail?.services ||
             hotelDetail.services.filter(
